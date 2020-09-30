@@ -11,6 +11,7 @@ import sqlite3
 
 
 def merger(directory, destination):
+    makedirs(destination, exist_ok=True)
     dir_list = [f.name for f in scandir(directory) if f.is_dir()]
 
     p_bar = tqdm(dir_list)
@@ -37,7 +38,7 @@ def merger(directory, destination):
         con.close()
 
         df_join = df_cells.join(df_well, "Image_Metadata_Well", "inner")
-        df_join.to_csv(path.join(destination, plate_number+".csv"), index=False)
+        df_join.to_csv(output, index=False)
 
 
 def extractor_file(plate_file, destination):
@@ -69,7 +70,7 @@ def extractor(tars_dir, destination):
     p_bar = tqdm(tars)
     for tar in p_bar:
         p_bar.set_description("Extracting {}".format(tar))
-        extractor_file(tar, destination)
+        extractor_file(path.join(tars_dir, tar), destination)
 
 
 def file_write(data):
