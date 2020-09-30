@@ -1,3 +1,11 @@
+####
+future_data/
+docs/
+plates/
+*.pdf
+####
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
