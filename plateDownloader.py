@@ -51,7 +51,7 @@ def extractor_file(plate_file, destination):
 
     tar = tarfile.open(plate_file, "r:gz")
 
-    for infile in tqdm([sql_file, profile_file]):
+    for infile in [sql_file, profile_file]:
         tar_member = tar.getmember(infile)
         tar_member.name = path.basename(infile)
         curr_dest = path.join(destination, plate_name)
@@ -125,7 +125,7 @@ def download_plates(ftp_link, destination, plate_amount=None, plate_numbers=None
         file.close()
         prog_bar.finish()
 
-    ftp.close()
+    ftp.quit()
 
 
 def main(working_path, plate_amount, plate_numbers):
