@@ -73,14 +73,8 @@ def extractor(tars_dir, destination):
         extractor_file(path.join(tars_dir, tar), destination)
 
 
-def file_write(data):
-    global prog_bar, file
-    file.write(data)
-    prog_bar.update(prog_bar.value + len(data))
-
 
 def download_plates(ftp_link, destination, plate_amount=None, plate_numbers=None):
-    global prog_bar, file
     makedirs(destination, exist_ok=True)
 
     if plate_numbers:
@@ -121,6 +115,11 @@ def download_plates(ftp_link, destination, plate_amount=None, plate_numbers=None
         prog_bar.start()
 
         file = open(dest, 'wb')
+
+        def file_write(data):
+            file.write(data)
+            prog_bar.update(prog_bar.value + len(data))
+
         ftp.retrbinary("RETR " + plate, file_write)
         file.close()
         prog_bar.finish()
