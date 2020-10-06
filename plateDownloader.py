@@ -100,48 +100,50 @@ def download_plates(ftp_link, destination, plate_amount=None, plate_numbers=None
             print("Warning: {} already exist, skipping..".format(plate))
             continue
 
-        # https://stackoverflow.com/questions/51684008/show-ftp-download-progress-in-python-progressbar
-        widgets = ['Downloading: %s ' % plate, Percentage(), ' ',
-                   Bar(marker='█', left='[', right=']'),
-                   ' ', ETA(), ' ', FileTransferSpeed()]
-        size = ftp.size(plate)
-
-        prog_bar = ProgressBar(widgets=widgets, maxval=size)
-        prog_bar.start()
-
-        cur_file = open(dest, 'wb')
-
-        def file_write(data):
-            cur_file.write(data)
-            prog_bar.update(prog_bar.value + len(data))
-
-        # https://stackoverflow.com/questions/8323607/download-big-files-via-ftp-with-python
-        attempts_left = MAX_ATTEMPTS
-
-        while size != cur_file.tell():
-            try:
-                if cur_file.tell():
-                    ftp.retrbinary("RETR " + plate, file_write, rest=cur_file.tell())
-                else:
-                    ftp.retrbinary("RETR " + plate, file_write)
-
-                cur_file.close()
-                prog_bar.finish()
-                break
-            except Exception as timeout_ex:
-                if attempts_left:
-                    attempts_left -= 1
-                    print("Got {}, retry {}".format(timeout_ex, MAX_ATTEMPTS-attempts_left))
-                    ftp = connect_ftp(ftp_link)
-                else:
-                    print("Failed to download {}". format(plate))
-                    cur_file.close()
-                    del cur_file
-                    remove(dest)
-                    prog_bar.finish(dirty=True)
-                    break
+        ftp = download_file(ftp, ftp_link, plate, dest)
 
     ftp.quit()
+
+
+def download_file(ftp, ftp_link, plate, dest_file):
+    # https://stackoverflow.com/questions/51684008/show-ftp-download-progress-in-python-progressbar
+    widgets = ['Downloading: %s ' % plate, Percentage(), ' ',
+               Bar(marker='█', left='[', right=']'),
+               ' ', ETA(), ' ', FileTransferSpeed()]
+    size = ftp.size(plate)
+    prog_bar = ProgressBar(widgets=widgets, maxval=size)
+    prog_bar.start()
+    cur_file = open(dest_file, 'wb')
+
+    def file_write(data):
+        cur_file.write(data)
+        prog_bar.update(prog_bar.value + len(data))
+
+    # https://stackoverflow.com/questions/8323607/download-big-files-via-ftp-with-python
+    attempts_left = MAX_ATTEMPTS
+    while size != cur_file.tell():
+        try:
+            if cur_file.tell():
+                ftp.retrbinary("RETR " + plate, file_write, rest=cur_file.tell())
+            else:
+                ftp.retrbinary("RETR " + plate, file_write)
+
+            cur_file.close()
+            prog_bar.finish()
+            break
+        except Exception as timeout_ex:
+            if attempts_left:
+                attempts_left -= 1
+                print(" Got {}, retry {}".format(timeout_ex, MAX_ATTEMPTS - attempts_left))
+                ftp = connect_ftp(ftp_link)
+            else:
+                print(" Failed to download {}".format(plate))
+                cur_file.close()
+                del cur_file
+                remove(dest_file)
+                prog_bar.finish(dirty=True)
+                break
+    return ftp
 
 
 def connect_ftp(ftp_link):
