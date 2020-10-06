@@ -1,4 +1,4 @@
-from os import path, scandir, makedirs
+from os import path, scandir, makedirs, remove
 from sys import argv
 from random import sample
 from ftplib import FTP
@@ -8,6 +8,10 @@ import tarfile
 from tqdm import tqdm
 import pandas as pd
 import sqlite3
+
+# Ftp constants
+TIMEOUT = 1  # In seconds
+MAX_ATTEMPTS = 5  # Number of Retries upon timeout
 
 
 def merger(directory, destination):
@@ -73,7 +77,6 @@ def extractor(tars_dir, destination):
         extractor_file(path.join(tars_dir, tar), destination)
 
 
-
 def download_plates(ftp_link, destination, plate_amount=None, plate_numbers=None):
     makedirs(destination, exist_ok=True)
 
@@ -85,15 +88,7 @@ def download_plates(ftp_link, destination, plate_amount=None, plate_numbers=None
     fmt = r"^Plate_{}.tar.gz$".format(reg)
     pattern = re.compile(fmt)
 
-    ftp_split = ftp_link.split(r"/")
-    ftp_domain = ftp_split[0]
-
-    ftp = FTP(ftp_domain)
-    ftp.login()
-
-    if len(ftp_split) > 1:
-        ftp_cwd = "/".join(ftp_split[1:])
-        ftp.cwd(ftp_cwd)
+    ftp = connect_ftp(ftp_link)
 
     plate_list = [plate for plate in ftp.nlst() if pattern.fullmatch(plate)]
     if plate_amount and plate_amount < len(plate_list):
@@ -114,17 +109,50 @@ def download_plates(ftp_link, destination, plate_amount=None, plate_numbers=None
         prog_bar = ProgressBar(widgets=widgets, maxval=size)
         prog_bar.start()
 
-        file = open(dest, 'wb')
+        cur_file = open(dest, 'wb')
 
         def file_write(data):
-            file.write(data)
+            cur_file.write(data)
             prog_bar.update(prog_bar.value + len(data))
 
-        ftp.retrbinary("RETR " + plate, file_write)
-        file.close()
-        prog_bar.finish()
+        # https://stackoverflow.com/questions/8323607/download-big-files-via-ftp-with-python
+        attempts_left = MAX_ATTEMPTS
+
+        while size != cur_file.tell():
+            try:
+                if cur_file.tell():
+                    ftp.retrbinary("RETR " + plate, file_write, rest=cur_file.tell())
+                else:
+                    ftp.retrbinary("RETR " + plate, file_write)
+
+                cur_file.close()
+                prog_bar.finish()
+                break
+            except Exception as timeout_ex:
+                if attempts_left:
+                    attempts_left -= 1
+                    print("Got {}, retry {}".format(timeout_ex, MAX_ATTEMPTS-attempts_left))
+                    ftp = connect_ftp(ftp_link)
+                else:
+                    print("Failed to download {}". format(plate))
+                    cur_file.close()
+                    del cur_file
+                    remove(dest)
+                    prog_bar.finish(dirty=True)
+                    break
 
     ftp.quit()
+
+
+def connect_ftp(ftp_link):
+    ftp_split = ftp_link.split(r"/")
+    ftp_domain = ftp_split[0]
+    ftp = FTP(ftp_domain, timeout=10)
+    ftp.login()
+    if len(ftp_split) > 1:
+        ftp_cwd = "/".join(ftp_split[1:])
+        ftp.cwd(ftp_cwd)
+    return ftp
 
 
 def main(working_path, plate_amount, plate_numbers):
