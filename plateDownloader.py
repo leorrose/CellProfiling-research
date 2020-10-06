@@ -134,7 +134,7 @@ def download_file(ftp, ftp_link, plate, dest_file):
         except Exception as timeout_ex:
             if attempts_left:
                 attempts_left -= 1
-                print(" Got {}, retry {}".format(timeout_ex, MAX_ATTEMPTS - attempts_left))
+                print(" Got {} Retry #{}".format(timeout_ex, MAX_ATTEMPTS - attempts_left))
                 ftp = connect_ftp(ftp_link)
             else:
                 print(" Failed to download {}".format(plate))
