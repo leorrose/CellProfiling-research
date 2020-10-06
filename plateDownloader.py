@@ -10,8 +10,8 @@ import pandas as pd
 import sqlite3
 
 # Ftp constants
-TIMEOUT = 1  # In seconds
-MAX_ATTEMPTS = 5  # Number of Retries upon timeout
+TIMEOUT = 10  # In seconds
+MAX_ATTEMPTS = 6  # Number of Retries upon timeout
 
 
 def merger(directory, destination):
