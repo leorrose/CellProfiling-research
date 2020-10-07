@@ -162,10 +162,13 @@ def connect_ftp():
 
 def main(working_path, plate_amount, plate_numbers):
     ftp, plate_list = plate_selector(plate_amount, plate_numbers)
+
     download_path = path.join(working_path, "tars")
     download_plates(ftp, download_path, plate_list)
+
     extract_path = path.join(working_path, "extracted")
     extractor(download_path, plate_list, extract_path)
+
     merge_path = path.join(working_path, "csvs")
     plate_folders = [plate.split('.')[0] for plate in plate_list]
     merger(extract_path, plate_folders, merge_path)
