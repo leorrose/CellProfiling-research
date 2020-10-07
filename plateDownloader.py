@@ -10,13 +10,15 @@ import pandas as pd
 import sqlite3
 
 # Ftp constants
+FTP_LINK = r"parrot.genomics.cn/gigadb/pub/10.5524/100001_101000/100351"
 TIMEOUT = 10  # In seconds
 MAX_ATTEMPTS = 6  # Number of Retries upon timeout
 
 
-def merger(directory, destination):
+def merger(directory, plate_folders, destination):
     makedirs(destination, exist_ok=True)
     dir_list = [f.name for f in scandir(directory) if f.is_dir()]
+    dir_list = [fld for fld in dir_list if fld in plate_folders]
 
     p_bar = tqdm(dir_list)
     for plate_folder in p_bar:
@@ -68,31 +70,18 @@ def extractor_file(plate_file, destination):
     tar.close()
 
 
-def extractor(tars_dir, destination):
+def extractor(tars_dir, plate_list, destination):
     makedirs(destination, exist_ok=True)
     tars = [f.name for f in scandir(tars_dir) if f.is_file()]
+    tars = [tar for tar in tars if tar in plate_list]
     p_bar = tqdm(tars)
     for tar in p_bar:
         p_bar.set_description("Extracting {}".format(tar))
         extractor_file(path.join(tars_dir, tar), destination)
 
 
-def download_plates(ftp_link, destination, plate_amount=None, plate_numbers=None):
+def download_plates(ftp, destination, plate_list):
     makedirs(destination, exist_ok=True)
-
-    if plate_numbers:
-        reg = r"({})".format("|".join(plate_numbers))
-    else:
-        reg = r"\d{5}"
-
-    fmt = r"^Plate_{}.tar.gz$".format(reg)
-    pattern = re.compile(fmt)
-
-    ftp = connect_ftp(ftp_link)
-
-    plate_list = [plate for plate in ftp.nlst() if pattern.fullmatch(plate)]
-    if plate_amount and plate_amount < len(plate_list):
-        plate_list = sample(plate_list, plate_amount)
 
     for plate in plate_list:
         dest = path.join(destination, plate)
@@ -100,12 +89,26 @@ def download_plates(ftp_link, destination, plate_amount=None, plate_numbers=None
             print("Warning: {} already exist, skipping..".format(plate))
             continue
 
-        ftp = download_file(ftp, ftp_link, plate, dest)
+        ftp = download_file(ftp, plate, dest)
 
     ftp.quit()
 
 
-def download_file(ftp, ftp_link, plate, dest_file):
+def plate_selector(plate_amount, plate_numbers):
+    if plate_numbers:
+        reg = r"({})".format("|".join(plate_numbers))
+    else:
+        reg = r"\d{5}"
+    fmt = r"^Plate_{}.tar.gz$".format(reg)
+    pattern = re.compile(fmt)
+    ftp = connect_ftp()
+    plate_list = [plate for plate in ftp.nlst() if pattern.fullmatch(plate)]
+    if plate_amount and plate_amount < len(plate_list):
+        plate_list = sample(plate_list, plate_amount)
+    return ftp, plate_list
+
+
+def download_file(ftp, plate, dest_file):
     # https://stackoverflow.com/questions/51684008/show-ftp-download-progress-in-python-progressbar
     widgets = ['Downloading: %s ' % plate, Percentage(), ' ',
                Bar(marker='█', left='[', right=']'),
@@ -135,7 +138,7 @@ def download_file(ftp, ftp_link, plate, dest_file):
             if attempts_left:
                 attempts_left -= 1
                 print(" Got {} Retry #{}".format(timeout_ex, MAX_ATTEMPTS - attempts_left))
-                ftp = connect_ftp(ftp_link)
+                ftp = connect_ftp()
             else:
                 print(" Failed to download {}".format(plate))
                 cur_file.close()
@@ -146,8 +149,8 @@ def download_file(ftp, ftp_link, plate, dest_file):
     return ftp
 
 
-def connect_ftp(ftp_link):
-    ftp_split = ftp_link.split(r"/")
+def connect_ftp():
+    ftp_split = FTP_LINK.split(r"/")
     ftp_domain = ftp_split[0]
     ftp = FTP(ftp_domain, timeout=10)
     ftp.login()
@@ -158,14 +161,14 @@ def connect_ftp(ftp_link):
 
 
 def main(working_path, plate_amount, plate_numbers):
-    ftp_url = r"parrot.genomics.cn/gigadb/pub/10.5524/100001_101000/100351"
-
+    ftp, plate_list = plate_selector(plate_amount, plate_numbers)
     download_path = path.join(working_path, "tars")
-    download_plates(ftp_url, download_path, plate_amount, plate_numbers)
+    download_plates(ftp, download_path, plate_list)
     extract_path = path.join(working_path, "extracted")
-    extractor(download_path, extract_path)
+    extractor(download_path, plate_list, extract_path)
     merge_path = path.join(working_path, "csvs")
-    merger(extract_path, merge_path)
+    plate_folders = [plate.split('.')[0] for plate in plate_list]
+    merger(extract_path, plate_folders, merge_path)
 
 
 def valid_numbers(str_list):
