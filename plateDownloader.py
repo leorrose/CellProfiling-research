@@ -45,6 +45,7 @@ def merger(directory, plate_folders, destination):
 
         df_join = df_cells.join(df_well, "Image_Metadata_Well", "inner")
         df_join.to_csv(output, index=False)
+        del df_well, df_cells, df_join
 
 
 def extractor_file(plate_file, destination):
@@ -68,6 +69,7 @@ def extractor_file(plate_file, destination):
         tar.extract(tar_member, curr_dest)
 
     tar.close()
+    del tar
 
 
 def extractor(tars_dir, plate_list, destination):
