@@ -13,7 +13,7 @@ def extract_statistics(csv_folder, dest_xls):
                 and f.name.split('.')[1] == 'csv']
 
     prog_bar = tqdm(csv_list, desc='Start running')
-    with pd.ExcelWriter(xls_file) as xl_writer:
+    with pd.ExcelWriter(dest_xls) as xl_writer:
         for csv in prog_bar:
             prog_bar.set_description('Load {}'.format(csv), refresh=True)
             name = csv.split('.')[0]
