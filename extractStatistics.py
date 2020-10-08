@@ -8,9 +8,7 @@ from tqdm import tqdm
 
 def extract_statistics(csv_folder, dest_xls):
     csv_list = [f.name for f in scandir(csv_folder)
-                if f.is_file()
-                and len(f.name.split('.')) == 2
-                and f.name.split('.')[1] == 'csv']
+                if f.is_file() and f.name.endswith('csv')]
 
     prog_bar = tqdm(csv_list, desc='Start running')
     with pd.ExcelWriter(dest_xls) as xl_writer:

@@ -154,7 +154,7 @@ def download_file(ftp, plate, dest_file):
 def connect_ftp():
     ftp_split = FTP_LINK.split(r"/")
     ftp_domain = ftp_split[0]
-    ftp = FTP(ftp_domain, timeout=10)
+    ftp = FTP(ftp_domain, timeout=TIMEOUT)
     ftp.login()
     if len(ftp_split) > 1:
         ftp_cwd = "/".join(ftp_split[1:])
