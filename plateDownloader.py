@@ -11,7 +11,7 @@ import sqlite3
 
 # Ftp constants
 FTP_LINK = r"parrot.genomics.cn/gigadb/pub/10.5524/100001_101000/100351"
-TIMEOUT = 10  # In seconds
+TIMEOUT = 1  # In seconds
 MAX_ATTEMPTS = 6  # Number of Retries upon timeout
 
 
@@ -91,9 +91,14 @@ def download_plates(ftp, destination, plate_list):
             print("Warning: {} already exist, skipping..".format(plate))
             continue
 
+        if not ftp:
+            print(f" Could not download more plates: {plate_list[plate_list.index(plate):]}")
+            break
+
         ftp = download_file(ftp, plate, dest)
 
-    ftp.quit()
+    if ftp:
+        ftp.quit()
 
 
 def plate_selector(plate_amount, plate_numbers):
@@ -103,19 +108,30 @@ def plate_selector(plate_amount, plate_numbers):
         reg = r"\d{5}"
     fmt = r"^Plate_{}.tar.gz$".format(reg)
     pattern = re.compile(fmt)
+
     ftp = connect_ftp()
+    if not ftp:
+        exit(-1)
+
     plate_list = [plate for plate in ftp.nlst() if pattern.fullmatch(plate)]
     if plate_amount and plate_amount < len(plate_list):
         plate_list = sample(plate_list, plate_amount)
+
     return ftp, plate_list
 
 
 def download_file(ftp, plate, dest_file):
+    try:
+        size = ftp.size(plate)
+    except Exception as ex:
+        print(f"Got {ex} ; Could not retrieve the size of plate {plate}")
+        del ftp
+        return None
+
     # https://stackoverflow.com/questions/51684008/show-ftp-download-progress-in-python-progressbar
     widgets = ['Downloading: %s ' % plate, Percentage(), ' ',
                Bar(marker='█', left='[', right=']'),
                ' ', ETA(), ' ', FileTransferSpeed()]
-    size = ftp.size(plate)
     prog_bar = ProgressBar(widgets=widgets, maxval=size)
     prog_bar.start()
     cur_file = open(dest_file, 'wb')
@@ -137,28 +153,51 @@ def download_file(ftp, plate, dest_file):
             prog_bar.finish()
             break
         except Exception as timeout_ex:
+            attempts_left -= 1
             if attempts_left:
-                attempts_left -= 1
                 print(" Got {} Retry #{}".format(timeout_ex, MAX_ATTEMPTS - attempts_left))
+                ftp.close()
+                del ftp
                 ftp = connect_ftp()
-            else:
-                print(" Failed to download {}".format(plate))
-                cur_file.close()
-                del cur_file
-                remove(dest_file)
-                prog_bar.finish(dirty=True)
-                break
+                if ftp:
+                    continue
+
+            print(" Failed to download {}".format(plate))
+            cur_file.close()
+            del cur_file
+            remove(dest_file)
+            prog_bar.finish(dirty=True)
+            break
+
     return ftp
 
 
 def connect_ftp():
     ftp_split = FTP_LINK.split(r"/")
     ftp_domain = ftp_split[0]
-    ftp = FTP(ftp_domain, timeout=TIMEOUT)
-    ftp.login()
-    if len(ftp_split) > 1:
-        ftp_cwd = "/".join(ftp_split[1:])
-        ftp.cwd(ftp_cwd)
+
+    curr_attempts = MAX_ATTEMPTS
+    ftp = None
+    while not ftp:
+        try:
+            ftp = FTP(ftp_domain, timeout=TIMEOUT)
+            ftp.login()
+            if len(ftp_split) > 1:
+                ftp_cwd = "/".join(ftp_split[1:])
+                ftp.cwd(ftp_cwd)
+        except Exception as timeout_ex:
+            curr_attempts -= 1
+            if ftp:
+                ftp.close()
+
+            del ftp
+            ftp = None
+            if not curr_attempts:
+                print(" Could not establish a connection")
+                break
+
+            print(" Got {} Retry #{} During connection".format(timeout_ex, MAX_ATTEMPTS - curr_attempts))
+
     return ftp
 
 
