@@ -50,7 +50,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint, Callback
 
 
 #change directory to project directory within the department cluster (SLURM)
-PROJECT_DIRECTORY = r'C:\Users\Niko\Desktop\plates'
+PROJECT_DIRECTORY = r'/storage/users/g-and-n/plates/'
 
 CHANNELS = ["AGP","DNA","ER","Mito","RNA"]
 LABEL_FIELD = 'Metadata_ASSAY_WELL_ROLE'
@@ -455,13 +455,17 @@ def main(path, scale_method):
             
             # Calculate MSE for each treatment
             joined = df_test_treated_y_scaled.join(yhat_lr, how='inner', lsuffix= '_Actual', rsuffix='_Predict')
-
-            curr_treatments[0].append(joined.groupby('Metadata_broad_sample').apply(lambda g: pd.Series(
+            treats = joined.groupby('Metadata_broad_sample').apply(lambda g: pd.Series(
         {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1)),
          f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1))
-         })))
+         }))
             del joined
-            
+
+            treats['Plate'] = test_plate.split('.')[0]
+            treats.set_index(['Plate'], inplace=True, append=True)
+            curr_treatments[0].append(treats)
+            del treats
+
             print('profile_mock:')            
             yhat_lr = pd.DataFrame(LR_model.predict(df_test_mock_x_scaled.values),
                               index=df_test_mock_x_scaled.index, columns=df_test_mock_y_scaled.columns)
@@ -478,11 +482,16 @@ def main(path, scale_method):
             # Calculate MSE for each well control
             joined = df_test_mock_y_scaled.join(yhat_lr, how='inner', lsuffix= '_Actual', rsuffix='_Predict')
 
-            curr_controls[0].append(joined.groupby('Image_Metadata_Well').apply(lambda g: pd.Series(
+            ctrl = joined.groupby('Image_Metadata_Well').apply(lambda g: pd.Series(
         {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1)),
          f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1))
-         })))
+         }))
             del joined
+
+            ctrl['Plate'] = test_plate.split('.')[0]
+            ctrl.set_index(['Plate'], inplace=True, append=True)
+            curr_controls[0].append(ctrl)
+            del ctrl
                           
             print('**************')
             
@@ -505,11 +514,16 @@ def main(path, scale_method):
             # Calculate MSE for each treatment
             joined = df_test_treated_y_scaled.join(yhat_ridge, how='inner', lsuffix= '_Actual', rsuffix='_Predict')
 
-            curr_treatments[1].append(joined.groupby('Metadata_broad_sample').apply(lambda g: pd.Series(
+            treats = joined.groupby('Metadata_broad_sample').apply(lambda g: pd.Series(
         {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1)),
          f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1))
-         })))
+         }))
             del joined
+
+            treats['Plate'] = test_plate.split('.')[0]
+            treats.set_index(['Plate'], inplace=True, append=True)
+            curr_treatments[1].append(treats)
+            del treats
             
             print('profile_mock:')            
             yhat_ridge = pd.DataFrame(Ridge_model.predict(df_test_mock_x_scaled.values),
@@ -528,11 +542,16 @@ def main(path, scale_method):
              # Calculate MSE for each well control
             joined = df_test_mock_y_scaled.join(yhat_ridge, how='inner', lsuffix= '_Actual', rsuffix='_Predict')
 
-            curr_controls[1].append(joined.groupby('Image_Metadata_Well').apply(lambda g: pd.Series(
+            ctrl = joined.groupby('Image_Metadata_Well').apply(lambda g: pd.Series(
         {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1)),
          f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1))
-         })))
+         }))
             del joined
+
+            ctrl['Plate'] = test_plate.split('.')[0]
+            ctrl.set_index(['Plate'], inplace=True, append=True)
+            curr_controls[1].append(ctrl)
+            del ctrl
 
             print('**************')
             
@@ -555,11 +574,16 @@ def main(path, scale_method):
             # Calculate MSE for each treatment
             joined = df_test_treated_y_scaled.join(yhat_DNN, how='inner', lsuffix= '_Actual', rsuffix='_Predict')
 
-            curr_treatments[2].append(joined.groupby('Metadata_broad_sample').apply(lambda g: pd.Series(
+            treats = joined.groupby('Metadata_broad_sample').apply(lambda g: pd.Series(
         {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1)),
          f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1))
-         })))
+         }))
             del joined
+
+            treats['Plate'] = test_plate.split('.')[0]
+            treats.set_index(['Plate'], inplace=True, append=True)
+            curr_treatments[2].append(treats)
+            del treats
 
 
             print('profile_mock:')
@@ -580,11 +604,16 @@ def main(path, scale_method):
             # Calculate MSE for each well control
             joined = df_test_mock_y_scaled.join(yhat_DNN, how='inner', lsuffix= '_Actual', rsuffix='_Predict')
 
-            curr_controls[2].append(joined.groupby('Image_Metadata_Well').apply(lambda g: pd.Series(
+            ctrl = joined.groupby('Image_Metadata_Well').apply(lambda g: pd.Series(
         {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1)),
          f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1))
-         })))
+         }))
             del joined
+
+            ctrl['Plate'] = test_plate.split('.')[0]
+            ctrl.set_index(['Plate'], inplace=True, append=True)
+            curr_controls[2].append(ctrl)
+            del ctrl
 
             print('**************')
 
