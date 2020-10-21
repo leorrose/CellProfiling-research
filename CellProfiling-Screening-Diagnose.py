@@ -456,8 +456,8 @@ def main(path, scale_method):
             # Calculate MSE for each treatment
             joined = df_test_treated_y_scaled.join(yhat_lr, how='inner', lsuffix= '_Actual', rsuffix='_Predict')
             treats = joined.groupby('Metadata_broad_sample').apply(lambda g: pd.Series(
-        {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1)),
-         f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1))
+        {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual$', axis=1), g.filter(regex='_Predict$', axis=1)),
+         f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual$', axis=1), g.filter(regex='_Predict$', axis=1))
          }))
             del joined
 
@@ -483,8 +483,8 @@ def main(path, scale_method):
             joined = df_test_mock_y_scaled.join(yhat_lr, how='inner', lsuffix= '_Actual', rsuffix='_Predict')
 
             ctrl = joined.groupby('Image_Metadata_Well').apply(lambda g: pd.Series(
-        {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1)),
-         f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1))
+        {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual$', axis=1), g.filter(regex='_Predict$', axis=1)),
+         f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual$', axis=1), g.filter(regex='_Predict$', axis=1))
          }))
             del joined
 
@@ -515,8 +515,8 @@ def main(path, scale_method):
             joined = df_test_treated_y_scaled.join(yhat_ridge, how='inner', lsuffix= '_Actual', rsuffix='_Predict')
 
             treats = joined.groupby('Metadata_broad_sample').apply(lambda g: pd.Series(
-        {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1)),
-         f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1))
+        {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual$', axis=1), g.filter(regex='_Predict$', axis=1)),
+         f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual$', axis=1), g.filter(regex='_Predict$', axis=1))
          }))
             del joined
 
@@ -543,8 +543,8 @@ def main(path, scale_method):
             joined = df_test_mock_y_scaled.join(yhat_ridge, how='inner', lsuffix= '_Actual', rsuffix='_Predict')
 
             ctrl = joined.groupby('Image_Metadata_Well').apply(lambda g: pd.Series(
-        {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1)),
-         f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1))
+        {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual$', axis=1), g.filter(regex='_Predict$', axis=1)),
+         f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual$', axis=1), g.filter(regex='_Predict$', axis=1))
          }))
             del joined
 
@@ -575,8 +575,8 @@ def main(path, scale_method):
             joined = df_test_treated_y_scaled.join(yhat_DNN, how='inner', lsuffix= '_Actual', rsuffix='_Predict')
 
             treats = joined.groupby('Metadata_broad_sample').apply(lambda g: pd.Series(
-        {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1)),
-         f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1))
+        {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual$', axis=1), g.filter(regex='_Predict$', axis=1)),
+         f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual$', axis=1), g.filter(regex='_Predict$', axis=1))
          }))
             del joined
 
@@ -605,8 +605,8 @@ def main(path, scale_method):
             joined = df_test_mock_y_scaled.join(yhat_DNN, how='inner', lsuffix= '_Actual', rsuffix='_Predict')
 
             ctrl = joined.groupby('Image_Metadata_Well').apply(lambda g: pd.Series(
-        {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1)),
-         f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1))
+        {f'{task_channel}_MSE': mean_squared_error(g.filter(regex='_Actual$', axis=1), g.filter(regex='_Predict$', axis=1)),
+         f'{task_channel}_MAE': mean_absolute_error(g.filter(regex='_Actual$', axis=1), g.filter(regex='_Predict$', axis=1))
          }))
             del joined
 
