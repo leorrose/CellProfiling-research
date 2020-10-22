@@ -28,13 +28,14 @@ MAX_ATTEMPTS = 6  # Number of Retries upon timeout
 
 
 # %% Selector:
-def plate_selector(plate_amount, plate_numbers):
+def plate_selector(plate_amount, plate_numbers, csv_folder):
     """
     Connects to the ftp server and return the list of plates' files
     according to the input parameters
 
     :param plate_amount: Amount of plates to be selected of None
     :param plate_numbers: List of plates' numbers or None
+    :param csv_folder: folder of exists csv, for knowing what not to download
     :return: valid ftp connection and the selected list of plates' files
     """
     if plate_numbers:
@@ -49,6 +50,16 @@ def plate_selector(plate_amount, plate_numbers):
         exit(-1)
 
     plate_list = [plate for plate in ftp.nlst() if pattern.fullmatch(plate)]
+
+    if path.exists(csv_folder):
+        csv_files = [f.name for f in scandir(csv_folder) if f.is_file and f.name.endswith(".csv")]
+        csv_numbers = [f.split('.')[0] for f in csv_files]
+        csv_plate_files = [f'Plate_{f}.tar.gz' for f in csv_numbers]
+        plate_list = [plate for plate in plate_list if plate not in csv_plate_files]
+        dont_download = [plate for plate in plate_list if plate in csv_plate_files]
+        if len(dont_download) > 0:
+            print(f'Notice: {dont_download} already have refined csv files')
+
     if plate_amount and plate_amount < len(plate_list):
         plate_list = sample(plate_list, plate_amount)
 
@@ -244,15 +255,16 @@ def merger(directory, plate_folders, destination):
 
 # %% Main function:
 def main(working_path, plate_amount, plate_numbers):
-    ftp, plate_list = plate_selector(plate_amount, plate_numbers)
-
     download_path = path.join(working_path, "tars")
+    extract_path = path.join(working_path, "extracted")
+    merge_path = path.join(working_path, "csvs")
+
+    ftp, plate_list = plate_selector(plate_amount, plate_numbers, merge_path)
+
     download_plates(ftp, download_path, plate_list)
 
-    extract_path = path.join(working_path, "extracted")
     extractor(download_path, plate_list, extract_path)
 
-    merge_path = path.join(working_path, "csvs")
     plate_folders = [plate.split('.')[0] for plate in plate_list]
     merger(extract_path, plate_folders, merge_path)
 
