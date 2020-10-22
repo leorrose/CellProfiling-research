@@ -4,6 +4,7 @@ docs/
 .idea/
 plates/
 *.pdf
+code/tryout.py
 ####
 
 
@@ -136,4 +137,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-/tryout.py
+/code/tryout.py
