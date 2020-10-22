@@ -1,9 +1,4 @@
-################################
-#      Author:  Naor Kolet     #
-#      Date:    15/10/20       #
-################################
-
-# Imports
+# %% Imports:
 
 # Utils
 from sys import argv
@@ -25,13 +20,14 @@ import tarfile
 import pandas as pd
 import sqlite3
 
-# FTP Modifiable constants
+# %% FTP Modifiable constants:
+
 FTP_LINK = r"parrot.genomics.cn/gigadb/pub/10.5524/100001_101000/100351"
 TIMEOUT = 1  # In seconds
 MAX_ATTEMPTS = 6  # Number of Retries upon timeout
 
 
-# Selector
+# %% Selector:
 def plate_selector(plate_amount, plate_numbers):
     """
     Connects to the ftp server and return the list of plates' files
@@ -59,7 +55,7 @@ def plate_selector(plate_amount, plate_numbers):
     return ftp, plate_list
 
 
-# Downloader
+# %% Downloader:
 
 # Connect to the FTP server and returns the connection
 def connect_ftp():
@@ -164,7 +160,7 @@ def download_plates(ftp, destination, plate_list):
         ftp.quit()
 
 
-# Extractor
+# %% Extractor:
 
 # Extract a single file
 def extractor_file(plate_file, destination):
@@ -172,23 +168,33 @@ def extractor_file(plate_file, destination):
     plate_name = plate_basename.split(".")[0]
     plate_number = plate_name.split("_")[1]
 
+    curr_dest = path.join(destination, plate_name)
+
     sql_file = r"gigascience_upload/{}/extracted_features/{}.sqlite".format(plate_name, plate_number)
     profile_file = r"gigascience_upload/{}/profiles/mean_well_profiles.csv".format(plate_name)
 
     tar = tarfile.open(plate_file, "r:gz")
 
-    for infile in [sql_file, profile_file]:
-        tar_member = tar.getmember(infile)
-        tar_member.name = path.basename(infile)
-        curr_dest = path.join(destination, plate_name)
-        extracted_file = path.join(curr_dest, tar_member.name)
-        if path.lexists(extracted_file):
-            print("Warning: {}/{} already extracted, skipping...".format(plate_name, tar_member.name))
-            continue
-        tar.extract(tar_member, curr_dest)
+    try:
+        for infile in [sql_file, profile_file]:
+            tar_member = tar.getmember(infile)
+            tar_member.name = path.basename(infile)
+            extracted_file = path.join(curr_dest, tar_member.name)
+            if path.lexists(extracted_file):
+                print(f'Warning: {plate_name}/{tar_member.name} already extracted, skipping...')
+                continue
+            tar.extract(tar_member, curr_dest)
 
-    tar.close()
-    del tar
+        tar.close()
+        del tar
+
+    except:
+        print(f'Warning: {plate_name}.tar.gz corrupted, deleting file...')
+        del tar
+        remove(plate_file)
+        for f in scandir(curr_dest):
+            remove(path.join(curr_dest, f.name))
+        remove(curr_dest)
 
 
 # Iterate over the gz files and extract them
@@ -202,7 +208,7 @@ def extractor(tars_dir, plate_list, destination):
         extractor_file(path.join(tars_dir, tar), destination)
 
 
-# Merger
+# %% Merger:
 def merger(directory, plate_folders, destination):
     makedirs(destination, exist_ok=True)
     dir_list = [f.name for f in scandir(directory) if f.is_dir()]
@@ -236,7 +242,7 @@ def merger(directory, plate_folders, destination):
         del df_well, df_cells, df_join
 
 
-# Main function
+# %% Main function:
 def main(working_path, plate_amount, plate_numbers):
     ftp, plate_list = plate_selector(plate_amount, plate_numbers)
 

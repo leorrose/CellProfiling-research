@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Imports
 
-# In this cell we are importing all relevant packages for our project
-
-# In[2]:
+# In[1] Imports:
 
 # connections and OS
 from os import chdir
@@ -15,7 +12,7 @@ from learning.training import *
 from learning.evaluations import *
 
 
-# In[41]:
+# In[2] main function:
 
 
 def main(csv_folder, scale_method):
@@ -110,6 +107,8 @@ def main(csv_folder, scale_method):
     for model_type, plates_per_model in controls.items():
         pd.concat(plates_per_model).to_csv(path.join('results', f'Controls_{model_type}.csv'))
 
+# In[3]:
+
 
 def deploy_model(mode_type, model_obj, test_plate, task_channel, curr_controls, curr_treatments, df_test_mock_x_scaled,
                  df_test_mock_y_scaled, df_test_treated_x_scaled, df_test_treated_y_scaled):
@@ -163,9 +162,7 @@ def deploy_model(mode_type, model_obj, test_plate, task_channel, curr_controls, 
     print('**************')
 
 
-# # Main
-
-# In[42]:
+# In[4] Main:
 
 if __name__ == '__main__':
     chdir(PROJECT_DIRECTORY)
