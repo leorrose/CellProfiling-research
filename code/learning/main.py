@@ -6,6 +6,7 @@
 
 # connections and OS
 from os import chdir
+from sys import argv
 
 from learning.preprocessing import *
 from learning.training import *
@@ -165,6 +166,10 @@ def deploy_model(mode_type, model_obj, test_plate, task_channel, curr_controls, 
 # In[4] Main:
 
 if __name__ == '__main__':
+    if len(argv) == 2:
+        print('Setting environment by input')
+        PROJECT_DIRECTORY = argv[1]
+
     chdir(PROJECT_DIRECTORY)
     makedirs('results', exist_ok=True)
     main('csvs/', S_STD)
