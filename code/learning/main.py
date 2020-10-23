@@ -36,12 +36,12 @@ def main(csv_folder, scale_method):
     treatments = {
             'Linear': [],
             'Ridge': [],
-            # 'DNN': [])
+            'DNN': []
         }
     controls = {
             'Linear': [],
             'Ridge': [],
-            # 'DNN': [])
+            'DNN': []
         }
     for test_plate in csv_files:
         # This is the current file that we will predict
@@ -51,12 +51,12 @@ def main(csv_folder, scale_method):
         curr_treatments = {
             'Linear': [],
             'Ridge': [],
-            # 'DNN': [])
+            'DNN': []
         }
         curr_controls = {
             'Linear': [],
             'Ridge': [],
-            # 'DNN': [])
+            'DNN': []
         }
         for task_channel in tqdm(CHANNELS):
 
@@ -81,7 +81,7 @@ def main(csv_folder, scale_method):
             models = {
                 'Linear': create_LR(df_train_x_scaled, df_train_y_scaled),
                 'Ridge': create_Ridge(df_train_x_scaled, df_train_y_scaled),
-                # 'DNN': create_model_dnn(task_channel, df_train_x_scaled, df_train_y_scaled, test_plate)
+                'DNN': create_model_dnn(task_channel, df_train_x_scaled, df_train_y_scaled, test_plate)
             }
             # svr_model = create_SVR(task_channel,df_train_x_scaled, df_train_y_scaled, channel_task_x, channel_task_y)
 
