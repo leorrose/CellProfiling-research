@@ -8,9 +8,9 @@
 from os import chdir
 from sys import argv
 
-from learning.preprocessing import *
-from learning.training import *
-from learning.evaluations import *
+from preprocessing import *
+from training import *
+from evaluations import *
 
 
 # In[2] main function:
