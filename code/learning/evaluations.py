@@ -6,13 +6,13 @@ from constants import ERROR_TYPE
 
 # In[1]:
 
-def get_error(df_predict, df_true):
+def get_error(df_predict, df_true, multioutput='uniform_average'):
     if ERROR_TYPE == 'MSE':
-        return mean_squared_error(df_true, df_predict)
+        return mean_squared_error(df_true, df_predict, multioutput=multioutput)
     elif ERROR_TYPE == 'RMSE':
-        return mean_squared_error(df_true, df_predict, squared=False)
+        return mean_squared_error(df_true, df_predict, squared=False, multioutput=multioutput)
     elif ERROR_TYPE == 'MAE':
-        return mean_absolute_error(df_true, df_predict)
+        return mean_absolute_error(df_true, df_predict, multioutput=multioutput)
     else:
         raise Exception("ERROR_TYPE NOT IN ['RMSE' | 'MSE' | 'MAE']")
 

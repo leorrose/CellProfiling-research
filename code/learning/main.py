@@ -108,6 +108,7 @@ def main(csv_folder, scale_method):
     for model_type, plates_per_model in controls.items():
         pd.concat(plates_per_model).to_csv(path.join('results', f'Controls_{model_type}.csv'))
 
+
 # In[3]:
 
 
@@ -127,14 +128,11 @@ def deploy_model(mode_type, model_obj, test_plate, task_channel, curr_controls, 
     get_family_error(test_plate, task_channel, mode_type, "Treated", y_pred, df_test_treated_y_scaled)
 
     # Calculate error for each treatment
-    joined = df_test_treated_y_scaled.join(y_pred, how='inner', lsuffix='_Actual', rsuffix='_Predict')
-    treats = joined.groupby('Metadata_broad_sample').apply(lambda g: pd.Series(
-        {f'{task_channel}_{ERROR_TYPE}': get_error(g.filter(regex='_Predict$', axis=1),
-                                                   g.filter(regex='_Actual$', axis=1))
-         }))
-    del joined
-    treats['Plate'] = test_plate.split('.')[0]
-    treats.set_index(['Plate'], inplace=True, append=True)
+    pred_result = df_test_treated_y_scaled.join(y_pred, how='inner', lsuffix='_Actual', rsuffix='_Predict')
+
+    gb = pred_result.groupby('Metadata_broad_sample')
+
+    treats = extract_errors_from_group_by(gb, test_plate, task_channel, y_pred.columns)
     curr_treatments[mode_type].append(treats)
     del treats
 
@@ -149,18 +147,35 @@ def deploy_model(mode_type, model_obj, test_plate, task_channel, curr_controls, 
     get_family_error(test_plate, task_channel, mode_type, "Mock", y_pred, df_test_mock_y_scaled)
 
     # Calculate error for each well control
-    joined = df_test_mock_y_scaled.join(y_pred, how='inner', lsuffix='_Actual', rsuffix='_Predict')
-    ctrl = joined.groupby('Image_Metadata_Well').apply(lambda g: pd.Series(
-        {f'{task_channel}_{ERROR_TYPE}': get_error(g.filter(regex='_Predict$', axis=1),
-                                                   g.filter(regex='_Actual$', axis=1))
-         }))
-    del joined
-    ctrl['Plate'] = test_plate.split('.')[0]
-    ctrl.set_index(['Plate'], inplace=True, append=True)
+    pred_result = df_test_mock_y_scaled.join(y_pred, how='inner', lsuffix='_Actual', rsuffix='_Predict')
+
+    gb = pred_result.groupby('Image_Metadata_Well')
+    del pred_result
+
+    ctrl = extract_errors_from_group_by(gb, test_plate, task_channel, y_pred.columns)
     curr_controls[mode_type].append(ctrl)
     del ctrl
 
     print('**************')
+
+
+def extract_errors_from_group_by(group_by, test_plate, task_channel, task_cols):
+    error_by_channel = group_by.apply(lambda g: pd.Series(
+        {f'{task_channel}_{ERROR_TYPE}': get_error(g.filter(regex='_Predict$', axis=1),
+                                                   g.filter(regex='_Actual$', axis=1))
+         }))
+
+    error_by_feature = group_by.apply(lambda g: pd.DataFrame(
+        [get_error(g.filter(regex='_Actual', axis=1), g.filter(regex='_Predict', axis=1),
+                   multioutput='raw_values')], columns=task_cols)).droplevel(1)
+    del group_by
+
+    errors = pd.concat([error_by_channel, error_by_feature], axis=1)
+    del error_by_channel, error_by_feature
+    errors['Plate'] = test_plate.split('.')[0]
+    errors.set_index(['Plate'], inplace=True, append=True)
+    errors = errors.swaplevel(0, 1)
+    return errors
 
 
 # In[4] Main:
