@@ -9,7 +9,7 @@ conda create --name tf-env python=3.8.6 tensorflow-gpu=2.2.0 scikit-learn pandas
 
 If we want to be able to run a jupyter notebook server we will need to run `conda install --name tf-env jupyterlab`
 
-=============
+-------------
 ### Execute a batch job
 There are some batch files currently in our work folder
 1. `sbatch-downloader` for downloading plates
@@ -81,7 +81,6 @@ Generates three folders in the given directory
 - None
 
 ##### Output
-Generates three folders in the given directory
-- tars: contain the raw tar.gz files of the plates
-- extracted: the relevant files from the compressed files
-- csvs: the relevant details for each plate in a csv file per plate, contain all the details for the cells from this plate.
+Currently generates:
+- Excel file with each plates' statistics.
+- Plot for every feature in each plate - will be replaced in the future
