@@ -3,13 +3,13 @@
 ## Instructions
 ### Preperations
 ```bash
-conda create --name tf-env python=3.8.6 tensorflow-gpu=2.2.0 scikit-learn pandas tqdm progressbar2 matplotlib
+conda create --name tf-env python=3.8.6 tensorflow-gpu=2.2.0 scikit-learn pandas tqdm progressbar2 matplotlib openpyxl
 ```
 > To create an enviroment named tf-env, need to be executed once.
 
 If we want to be able to run a jupyter notebook server we will need to run `conda install --name tf-env jupyterlab`
 
-------------
+=============
 ### Execute a batch job
 There are some batch files currently in our work folder
 1. `sbatch-downloader` for downloading plates
@@ -30,7 +30,7 @@ a possible usage for that is running with the big plate folder only after it was
 - At our lab we have a few "golden tickets" which will give us priority for nodes. We can use it wisely if we want to ran with less chance to be preempted.
 `sbatch --qos=assafzar <sbatch-file-name>`
 
-------------
+-------------
 
 ### Scripts
 #### /code/learning/main.py
@@ -47,6 +47,7 @@ Note: Currently the directory must contain the "csvs" folder from the downloader
 ##### Output
 Generates output in the given directory in a folder named "results"
 
+-------------
 #### /code/plateDownloader.py
 ##### Usages
 - Usage 1: `plateDownloader.py <working_folder> -n <plate_amount>`
@@ -62,6 +63,22 @@ Generates output in the given directory in a folder named "results"
 - Will download files that not already exists in the given folders
 - With the "n" parameter, selects n plates randomly from the given list or from the ftp server
 
+##### Output
+Generates three folders in the given directory
+- tars: contain the raw tar.gz files of the plates
+- extracted: the relevant files from the compressed files
+- csvs: the relevant details for each plate in a csv file per plate, contain all the details for the cells from this plate.
+
+-------------
+#### /code/extractStatistics.py
+##### Usages
+- Usage: `extractStatistics.py <csv_folder> <output_folder>`
+
+##### Examples
+- Usage: `extractStatistics.py C:\plates\csvs C:\plates\stats` will run over the plates' csv files in C:\plates\csvs and create their statistics in C:\plates\stats
+
+##### Notes:
+- None
 
 ##### Output
 Generates three folders in the given directory
