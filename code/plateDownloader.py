@@ -23,7 +23,7 @@ import sqlite3
 # %% FTP Modifiable constants:
 
 FTP_LINK = r"parrot.genomics.cn/gigadb/pub/10.5524/100001_101000/100351"
-TIMEOUT = 1  # In seconds
+TIMEOUT = 10  # In seconds
 MAX_ATTEMPTS = 6  # Number of Retries upon timeout
 
 
