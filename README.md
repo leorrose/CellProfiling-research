@@ -38,6 +38,10 @@ a possible usage for that is running with the big plate folder only after it was
 - Usage 1: without parameters, will run over the default big directory
 - Usage 2: `main.py <working_folder>` will run over the given directory
 
+##### Examples
+- Usage 1: `main.py` will run over with the default big plate folder - option will be removed in the future
+- Usage 2: `main.py C:\plates` will run over C:\plates
+
 Note: Currently the directory must contain the "csvs" folder from the downloader script
 
 ##### Output
@@ -49,7 +53,12 @@ Generates output in the given directory in a folder named "results"
 - Usage 2: `plateDownloader.py <working_folder> -l <plate_number1> <plate_number2> ...`
 - Usage 3: `plateDownloader.py <working_folder> -n <plate_amount> -l <plate_number1> <plate_number2> ...`
 
-Notes:
+##### Examples
+- Usage 1: `plateDownloader.py C:\plates -n 5` will download 5 random plates from the available plates at the ftp server to C:\plates
+- Usage 2: `plateDownloader.py C:\plates -l 26569 26572 25732` will download plates: 26569, 26572 and 25732 to C:\plates
+- Usage 3: `plateDownloader.py C:\plates -n 2 -l 26569 26575 26574 26576` will download 2 random plates from the given plates' number to C:\plates
+
+##### Notes:
 - Will download files that not already exists in the given folders
 - With the "n" parameter, selects n plates randomly from the given list or from the ftp server
 
