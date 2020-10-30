@@ -20,11 +20,17 @@ import tarfile
 import pandas as pd
 import sqlite3
 
+# Multiprocess
+from multiprocessing import Pool
+from itertools import cycle
+
+
 # %% FTP Modifiable constants:
 
 FTP_LINK = r"parrot.genomics.cn/gigadb/pub/10.5524/100001_101000/100351"
 TIMEOUT = 10  # In seconds
 MAX_ATTEMPTS = 6  # Number of Retries upon timeout
+MP_COUNT = 4  # How many parallel processes
 
 
 # %% Selector:
@@ -175,6 +181,7 @@ def download_plates(ftp, destination, plate_list):
 
 # Extract a single file
 def extractor_file(plate_file, destination):
+    print(f'Extracting {path.basename(plate_file)}')
     plate_basename = path.basename(plate_file)
     plate_name = plate_basename.split(".")[0]
     plate_number = plate_name.split("_")[1]
@@ -213,10 +220,21 @@ def extractor(tars_dir, plate_list, destination):
     makedirs(destination, exist_ok=True)
     tars = [f.name for f in scandir(tars_dir) if f.is_file()]
     tars = [tar for tar in tars if tar in plate_list]
-    p_bar = tqdm(tars)
-    for tar in p_bar:
-        p_bar.set_description("Extracting {}".format(tar))
-        extractor_file(path.join(tars_dir, tar), destination)
+    tars = [path.join(tars_dir, tar) for tar in tars]
+
+    p = Pool(MP_COUNT)
+
+    p_bar = tqdm(desc="Extracting... ", total=len(tars))
+
+    def success(result):
+        nonlocal p_bar
+        p_bar.update()
+
+    p.starmap_async(extractor_file, zip(tars, cycle([destination])), callback=success)
+
+    p.close()
+
+    p.join()
 
 
 # %% Merger:
@@ -225,32 +243,40 @@ def merger(directory, plate_folders, destination):
     dir_list = [f.name for f in scandir(directory) if f.is_dir()]
     dir_list = [fld for fld in dir_list if fld in plate_folders]
 
-    p_bar = tqdm(dir_list)
-    for plate_folder in p_bar:
-        p_bar.set_description("Merging {}".format(plate_folder))
-        folder_path = path.join(directory, plate_folder)
-        plate_number = plate_folder.split('_')[1]
-        output = path.join(destination, plate_number + ".csv")
-        if path.lexists(output):
-            print("Warning: {} already merged, skipping...".format(plate_folder))
-            continue
+    p = Pool(MP_COUNT)
+    p_bar = tqdm(desc="Merging... ", total=len(dir_list))
 
-        sql_file = path.join(folder_path, plate_number + ".sqlite")
-        well_file = path.join(folder_path, "mean_well_profiles.csv")
+    def success(result):
+        nonlocal p_bar
+        p_bar.update()
 
-        df_well = pd.read_csv(well_file,
-                              index_col="Metadata_Well",
-                              usecols=["Metadata_Well", "Metadata_ASSAY_WELL_ROLE", "Metadata_broad_sample"])
+    p.starmap_async(merge_plate, zip(cycle([destination]), cycle([directory]), dir_list), callback=success)
 
-        con = sqlite3.connect(sql_file)
-        query = "SELECT Cells.*, Image.Image_Metadata_Well FROM Cells " \
-                "INNER JOIN Image ON Cells.ImageNumber = Image.ImageNumber"
-        df_cells = pd.read_sql_query(query, con)
-        con.close()
+    p.close()
+    p.join()
 
-        df_join = df_cells.join(df_well, "Image_Metadata_Well", "inner")
-        df_join.to_csv(output, index=False)
-        del df_well, df_cells, df_join
+
+def merge_plate(destination, directory, plate_folder):
+    print("Merging {}".format(plate_folder))
+    folder_path = path.join(directory, plate_folder)
+    plate_number = plate_folder.split('_')[1]
+    output = path.join(destination, plate_number + ".csv")
+    if path.lexists(output):
+        print("Warning: {} already merged, skipping...".format(plate_folder))
+        # continue
+    sql_file = path.join(folder_path, plate_number + ".sqlite")
+    well_file = path.join(folder_path, "mean_well_profiles.csv")
+    df_well = pd.read_csv(well_file,
+                          index_col="Metadata_Well",
+                          usecols=["Metadata_Well", "Metadata_ASSAY_WELL_ROLE", "Metadata_broad_sample"])
+    con = sqlite3.connect(sql_file)
+    query = "SELECT Cells.*, Image.Image_Metadata_Well FROM Cells " \
+            "INNER JOIN Image ON Cells.ImageNumber = Image.ImageNumber"
+    df_cells = pd.read_sql_query(query, con)
+    con.close()
+    df_join = df_cells.join(df_well, "Image_Metadata_Well", "inner")
+    df_join.to_csv(output, index=False)
+    del df_well, df_cells, df_join
 
 
 # %% Main function:
