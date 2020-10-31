@@ -275,6 +275,10 @@ def merge_plate(destination, directory, plate_folder):
     df_cells = pd.read_sql_query(query, con)
     con.close()
     df_join = df_cells.join(df_well, "Image_Metadata_Well", "inner")
+
+    df_join.rename(columns={"TableNumber": "Plate"}, inplace=True)
+    df_join["Plate"] = plate_folder.split('_')[1]
+
     df_join.to_csv(output, index=False)
     del df_well, df_cells, df_join
 
