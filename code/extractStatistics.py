@@ -1,12 +1,16 @@
+from itertools import cycle
+from multiprocessing import Pool, cpu_count
+
 import pandas as pd
-from os import scandir, path, makedirs
+from os import scandir, path, makedirs, chdir
 from sys import argv
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from learning.constants import CHANNELS, LABEL_FIELD
 
-
 # Warning - need openpyxl package
+from learning.preprocessing import split_columns
+
 
 def extract_statistics(csv_folder, dest):
     csv_list = [f.name for f in scandir(csv_folder)
@@ -19,7 +23,8 @@ def extract_statistics(csv_folder, dest):
             prog_bar.set_description('Load {}'.format(csv), refresh=True)
             name = csv.split('.')[0]
             src = path.join(csv_folder, csv)
-            df = pd.read_csv(src, index_col=[LABEL_FIELD, 'Metadata_broad_sample', 'Image_Metadata_Well', 'ImageNumber', 'ObjectNumber'])
+            df = pd.read_csv(src, index_col=[LABEL_FIELD, 'Metadata_broad_sample', 'Image_Metadata_Well', 'ImageNumber',
+                                             'ObjectNumber'])
 
             prog_bar1 = tqdm(df.columns, desc=f'Plotting features')
 
@@ -60,6 +65,52 @@ def extract_statistics(csv_folder, dest):
             del df
 
 
+def features_stats(csv_path, dest):
+    chdir(csv_path)
+
+    csv_list = [f.name for f in scandir()
+                if f.is_file() and f.name.endswith('.csv')]
+
+    p = Pool(cpu_count())
+
+    stats_per_plate = p.starmap_async(extract_stats_from_plate, zip(csv_list, cycle([dest]))).get()
+    p.close()
+    p.join()
+
+    stats_per_plate = {stat: [dic[stat] for dic in stats_per_plate] for stat in stats_per_plate[0]}
+    stats_per_plate = {stat: pd.concat(stats_per_plate[stat]) for stat in stats_per_plate}
+
+    p = Pool(cpu_count())
+    p.starmap_async(extract_stats_all_plates,
+                    zip(stats_per_plate.keys(), stats_per_plate.values(), cycle([dest]))).get()
+    p.close()
+    p.join()
+
+
+def extract_stats_from_plate(csv, dest):
+    print(f'csv_file {csv}')
+    df: pd.DataFrame = pd.read_csv(csv)
+
+    df, gen_cols, corr_cols, channel_dict = split_columns(df)
+    df.drop(corr_cols, axis=1, inplace=True)
+    df = df[df.index.isin(['mock'], 1)]
+
+    gb = df.groupby(['Plate', 'Image_Metadata_Well'])
+
+    desc = gb.describe()
+    desc.to_csv(path.join(dest, f'Control_Wells_Stats_{csv.split(".")[0]}.csv'))
+    # desc.columns.unique(1).to_list()
+
+    desc = df.groupby(['Plate']).describe()
+
+    return {stat: desc.xs(stat, level=1, axis=1) for stat in desc.columns.unique(1)}
+
+
+def extract_stats_all_plates(stat: str, df: pd.DataFrame, dest: str):
+    desc = df.describe()
+    desc.to_csv(path.join(dest, f'Control_Stats_Overall_{stat}.csv'))
+
+
 if __name__ == '__main__':
     if len(argv) == 2:
         print("Please follow the following usages:")
@@ -74,4 +125,4 @@ if __name__ == '__main__':
         exit(-1)
 
     makedirs(output_folder, exist_ok=True)
-    extract_statistics(csvs_folder, output_folder)
+    features_stats(csvs_folder, output_folder)

@@ -1,7 +1,7 @@
 import pandas
 from tqdm import tqdm
 
-from constants import *
+from learning.constants import *
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
@@ -90,8 +90,8 @@ def split_train_test(path, csv_files, test_plate, task_channel):
     # print(df_test_x.index.unique(0).tolist())
     # print(df_test_x.index.unique(1).tolist())
 
-    df_test_mock_x = df_test_x[df_test_x.index.isin(['mock'], 0)]
-    df_test_treated_x = df_test_x[df_test_x.index.isin(['treated'], 0)]
+    df_test_mock_x = df_test_x[df_test_x.index.isin(['mock'], 1)]
+    df_test_treated_x = df_test_x[df_test_x.index.isin(['treated'], 1)]
     df_test_mock_y = df_test_y.loc[df_test_mock_x.index]
     df_test_treated_y = df_test_y.loc[df_test_treated_x.index]
 
