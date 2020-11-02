@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from learning.constants import CHANNELS, LABEL_FIELD
 
 # Warning - need openpyxl package
-from learning.preprocessing import split_columns
+from learning.preprocessing import list_columns, load_plate_csv
 
 
 def extract_statistics(csv_folder, dest):
@@ -73,10 +73,15 @@ def features_stats(csv_path, dest):
 
     p = Pool(cpu_count())
 
-    stats_per_plate = p.starmap_async(extract_stats_from_plate, zip(csv_list, cycle([dest]))).get()
+    results = p.starmap_async(extract_stats_from_plate, zip(csv_list, cycle([dest]))).get()
     p.close()
     p.join()
 
+    plates_summery = [result[0] for result in results]
+    plates_summery = pd.concat(plates_summery)
+    plates_summery.to_csv(path.join(dest, 'CW_Plates_Summery.csv'))
+
+    stats_per_plate = [result[1] for result in results]
     stats_per_plate = {stat: [dic[stat] for dic in stats_per_plate] for stat in stats_per_plate[0]}
     stats_per_plate = {stat: pd.concat(stats_per_plate[stat]) for stat in stats_per_plate}
 
@@ -88,27 +93,35 @@ def features_stats(csv_path, dest):
 
 
 def extract_stats_from_plate(csv, dest):
-    print(f'csv_file {csv}')
-    df: pd.DataFrame = pd.read_csv(csv)
+    print(f'Processing: {csv}')
+    plate_number = csv.split(".")[0]
 
-    df, gen_cols, corr_cols, channel_dict = split_columns(df)
+    plate_folder = path.join(dest, plate_number)
+    makedirs(plate_folder, exist_ok=True)
+
+    df = load_plate_csv(csv)
+
+    gen_cols, corr_cols, channel_dict = list_columns(df)
     df.drop(corr_cols, axis=1, inplace=True)
     df = df[df.index.isin(['mock'], 1)]
 
     gb = df.groupby(['Plate', 'Image_Metadata_Well'])
 
     desc = gb.describe()
-    desc.to_csv(path.join(dest, f'Control_Wells_Stats_{csv.split(".")[0]}.csv'))
-    # desc.columns.unique(1).to_list()
+    desc.to_csv(path.join(plate_folder, f'CW_{plate_number}_Summery.csv'))
+
+    for stat in desc.columns.unique(1):
+        nest_desc = desc.xs(stat, level=1, axis=1).describe()
+        nest_desc.to_csv(path.join(plate_folder, f'CW_{plate_number}_{stat}.csv'))
 
     desc = df.groupby(['Plate']).describe()
 
-    return {stat: desc.xs(stat, level=1, axis=1) for stat in desc.columns.unique(1)}
+    return desc, {stat: desc.xs(stat, level=1, axis=1) for stat in desc.columns.unique(1)}
 
 
 def extract_stats_all_plates(stat: str, df: pd.DataFrame, dest: str):
     desc = df.describe()
-    desc.to_csv(path.join(dest, f'Control_Stats_Overall_{stat}.csv'))
+    desc.to_csv(path.join(dest, f'CW_Plate_{stat}.csv'))
 
 
 if __name__ == '__main__':
