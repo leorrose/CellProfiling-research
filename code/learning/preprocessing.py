@@ -52,11 +52,10 @@ def split_by_channel(filename, task_channel):
     """
 
     # Data preparation
-    df = pd.read_csv(filename)
-    df.drop(['TableNumber'], inplace=True, axis=1)
+    df = load_plate_csv(filename)
     df.dropna(inplace=True)
 
-    df, general_cols, corr_cols, dict_channel_cols = split_columns(df)
+    general_cols, corr_cols, dict_channel_cols = list_columns(df)
 
     not_curr_channel_cols = [col for channel in CHANNELS if channel != task_channel
                              for col in dict_channel_cols[channel]]
@@ -69,9 +68,14 @@ def split_by_channel(filename, task_channel):
     return x_features_df, y_df
 
 
-def split_columns(df):
-    df = df.set_index(['Plate', LABEL_FIELD, 'Metadata_broad_sample', 'Image_Metadata_Well', 'ImageNumber', 'ObjectNumber'])
+def load_plate_csv(csv_file):
+    df: pd.DataFrame = pd.read_csv(csv_file)
+    df = df.set_index(
+        ['Plate', LABEL_FIELD, 'Metadata_broad_sample', 'Image_Metadata_Well', 'ImageNumber', 'ObjectNumber'])
+    return df
 
+
+def list_columns(df):
     general_cols = [f for f in df.columns if all(c not in f for c in CHANNELS)]
     corr_cols = [f for f in df.columns if 'Correlation' in f]
 
@@ -80,7 +84,7 @@ def split_columns(df):
     for channel in CHANNELS:
         dict_channel_cols[channel] = [col for col in df.columns if channel in col and col not in corr_cols]
 
-    return df, general_cols, corr_cols, dict_channel_cols
+    return general_cols, corr_cols, dict_channel_cols
 
 
 def split_train_test(path, csv_files, test_plate, task_channel):
