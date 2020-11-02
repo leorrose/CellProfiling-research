@@ -123,6 +123,5 @@ if __name__ == '__main__':
     if not path.lexists(csvs_folder):
         print("CSV folder must exist")
         exit(-1)
-
     makedirs(output_folder, exist_ok=True)
     features_stats(csvs_folder, output_folder)
