@@ -71,12 +71,14 @@ def features_stats(csv_path, dest):
     csv_list = [f.name for f in scandir()
                 if f.is_file() and f.name.endswith('.csv')]
 
-    p = Pool(cpu_count())
+    print("Process plates' csv")
+    p = Pool(cpu_count()-1)
 
-    results = p.starmap_async(extract_stats_from_plate, zip(csv_list, cycle([dest]))).get()
+    results = p.starmap(extract_stats_from_plate, zip(csv_list, cycle([dest])))
     p.close()
     p.join()
 
+    print("Process plates' summery")
     plates_summery = [result[0] for result in results]
     plates_summery = pd.concat(plates_summery)
     plates_summery.to_csv(path.join(dest, 'CW_Plates_Summery.csv'))
@@ -85,9 +87,10 @@ def features_stats(csv_path, dest):
     stats_per_plate = {stat: [dic[stat] for dic in stats_per_plate] for stat in stats_per_plate[0]}
     stats_per_plate = {stat: pd.concat(stats_per_plate[stat]) for stat in stats_per_plate}
 
-    p = Pool(cpu_count())
-    p.starmap_async(extract_stats_all_plates,
-                    zip(stats_per_plate.keys(), stats_per_plate.values(), cycle([dest]))).get()
+    print("Process plates' summery")
+    p = Pool(cpu_count()-1)
+    p.starmap(extract_stats_all_plates,
+                    zip(stats_per_plate.keys(), stats_per_plate.values(), cycle([dest])))
     p.close()
     p.join()
 
