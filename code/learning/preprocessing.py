@@ -1,7 +1,7 @@
 import pandas
 from tqdm import tqdm
 
-from learning.constants import *
+from constants import *
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
@@ -105,7 +105,7 @@ def split_train_test(path, csv_files, test_plate, task_channel):
     for train_plate in tqdm(csv_files):
         if train_plate != test_plate:
             curr_x, curr_y = split_by_channel(path + train_plate, task_channel)
-            curr_x = curr_x[curr_x.index.isin(['mock'], 0)]
+            curr_x = curr_x[curr_x.index.isin(['mock'], 1)]
             curr_y = curr_y.loc[curr_x.index]
 
             list_x_df.append(curr_x)
