@@ -1,7 +1,7 @@
 import pandas
 from tqdm import tqdm
 
-from constants import *
+from learning.constants import *
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
