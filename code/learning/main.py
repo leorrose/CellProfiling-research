@@ -8,9 +8,9 @@
 from os import chdir
 from sys import argv
 
+from evaluations import *
 from preprocessing import *
 from training import *
-from evaluations import *
 
 
 # In[2] main function:
@@ -34,15 +34,15 @@ def main(csv_folder, scale_method):
 
     # Holds error per plate
     treatments = {
-            'Linear': [],
-            'Ridge': [],
-            'DNN': []
-        }
+        'Linear': [],
+        'Ridge': [],
+        'DNN': []
+    }
     controls = {
-            'Linear': [],
-            'Ridge': [],
-            'DNN': []
-        }
+        'Linear': [],
+        'Ridge': [],
+        'DNN': []
+    }
     for test_plate in csv_files:
         # This is the current file that we will predict
         print(test_plate)

@@ -1,9 +1,9 @@
-import pandas
+import pandas as pd
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tqdm import tqdm
 
 from learning.constants import *
-import pandas as pd
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+
 
 # Preprocessing functions
 
@@ -69,6 +69,9 @@ def split_by_channel(filename, task_channel):
 
 
 def load_plate_csv(csv_file):
+    """
+    This function read a plate's csv file and give an indexed pandas dataframe
+    """
     df: pd.DataFrame = pd.read_csv(csv_file)
     df = df.set_index(
         ['Plate', LABEL_FIELD, 'Metadata_broad_sample', 'Image_Metadata_Well', 'ImageNumber', 'ObjectNumber'])
@@ -76,6 +79,10 @@ def load_plate_csv(csv_file):
 
 
 def list_columns(df):
+    """
+    This function split the plate's columns to different lists
+    general columns, correlation columns and a dictionary channel -> channel columns
+    """
     general_cols = [f for f in df.columns if all(c not in f for c in CHANNELS)]
     corr_cols = [f for f in df.columns if 'Correlation' in f]
 
@@ -88,11 +95,12 @@ def list_columns(df):
 
 
 def split_train_test(path, csv_files, test_plate, task_channel):
+    """
+    This function prepare dataframes for the models
+    test contain the data from one channel and train contains only mock from other plates
+    """
     # Prepare test samples
     df_test_x, df_test_y = split_by_channel(path + test_plate, task_channel)
-
-    # print(df_test_x.index.unique(0).tolist())
-    # print(df_test_x.index.unique(1).tolist())
 
     df_test_mock_x = df_test_x[df_test_x.index.isin(['mock'], 1)]
     df_test_treated_x = df_test_x[df_test_x.index.isin(['treated'], 1)]

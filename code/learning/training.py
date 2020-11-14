@@ -1,9 +1,10 @@
 from os import path, makedirs
 
 from sklearn.linear_model import LinearRegression, Ridge
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.models import Model
+
 
 # # Create Models
 
