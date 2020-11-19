@@ -1,7 +1,6 @@
 from os import path, listdir
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-
 from constants import ERROR_TYPE
 
 
