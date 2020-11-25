@@ -3,6 +3,7 @@ future_data/
 docs/
 .idea/
 plates/
+plots/
 *.pdf
 code/tryout.py
 ####

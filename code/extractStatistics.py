@@ -12,6 +12,7 @@ from learning.constants import CHANNELS, LABEL_FIELD
 from learning.preprocessing import list_columns, load_plate_csv
 
 
+# Old version
 def extract_statistics(csv_folder, dest):
     csv_list = [f.name for f in scandir(csv_folder)
                 if f.is_file() and f.name.endswith('csv')]
@@ -71,12 +72,19 @@ def features_stats(csv_path, dest):
     csv_list = [f.name for f in scandir()
                 if f.is_file() and f.name.endswith('.csv')]
 
-    p = Pool(cpu_count())
+    print("Process plates' csv")
+    p = Pool(cpu_count() - 1)
 
-    results = p.starmap_async(extract_stats_from_plate, zip(csv_list, cycle([dest]))).get()
+    results = p.starmap(extract_stats_from_plate, zip(csv_list, cycle([dest])))
     p.close()
     p.join()
 
+    print("Merge wells per plate")
+    wells_per_plate = [result[2] for result in results]
+    wells_per_plate = pd.concat(wells_per_plate)
+    wells_per_plate.to_csv(path.join(dest, 'CW_Plates_Wells_Summery.csv'))
+
+    print("Process plates' summery")
     plates_summery = [result[0] for result in results]
     plates_summery = pd.concat(plates_summery)
     plates_summery.to_csv(path.join(dest, 'CW_Plates_Summery.csv'))
@@ -85,9 +93,10 @@ def features_stats(csv_path, dest):
     stats_per_plate = {stat: [dic[stat] for dic in stats_per_plate] for stat in stats_per_plate[0]}
     stats_per_plate = {stat: pd.concat(stats_per_plate[stat]) for stat in stats_per_plate}
 
-    p = Pool(cpu_count())
-    p.starmap_async(extract_stats_all_plates,
-                    zip(stats_per_plate.keys(), stats_per_plate.values(), cycle([dest]))).get()
+    print("Process per plates' summery")
+    p = Pool(cpu_count() - 1)
+    p.starmap(extract_stats_all_plates,
+              zip(stats_per_plate.keys(), stats_per_plate.values(), cycle([dest])))
     p.close()
     p.join()
 
@@ -107,16 +116,16 @@ def extract_stats_from_plate(csv, dest):
 
     gb = df.groupby(['Plate', 'Image_Metadata_Well'])
 
-    desc = gb.describe()
-    desc.to_csv(path.join(plate_folder, f'CW_{plate_number}_Summery.csv'))
+    desc_wells = gb.describe()
+    desc_wells.to_csv(path.join(plate_folder, f'CW_{plate_number}_Summery.csv'))
 
-    for stat in desc.columns.unique(1):
-        nest_desc = desc.xs(stat, level=1, axis=1).describe()
+    for stat in desc_wells.columns.unique(1):
+        nest_desc = desc_wells.xs(stat, level=1, axis=1).describe()
         nest_desc.to_csv(path.join(plate_folder, f'CW_{plate_number}_{stat}.csv'))
 
     desc = df.groupby(['Plate']).describe()
 
-    return desc, {stat: desc.xs(stat, level=1, axis=1) for stat in desc.columns.unique(1)}
+    return desc, {stat: desc.xs(stat, level=1, axis=1) for stat in desc.columns.unique(1)}, desc_wells
 
 
 def extract_stats_all_plates(stat: str, df: pd.DataFrame, dest: str):
