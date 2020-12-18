@@ -8,7 +8,7 @@
 #SBATCH --partition short			### specify partition name where to run a job. debug: 2 hours limit; short: 7 days limit; gtx1080: 7 days
 #SBATCH --time 7-00:00:00			### limit the time of job running, partition limit can override this. Format: D-H:MM:SS
 #SBATCH --job-name CellProfile	### name of the job
-#SBATCH --output job_outputs/diagnose-all-%J.out			### output log for running job - %J for job number
+#SBATCH --output job_outputs/diagnose-35-%J.out			### output log for running job - %J for job number
 #SBATCH --mail-user=naorko@post.bgu.ac.il	### user email for sending job status
 #SBATCH --mail-type=ALL			### conditions when to send the email. ALL,BEGIN,END,FAIL, REQUEU, NONE
 
@@ -24,4 +24,4 @@ echo -e "SLURM_JOB_NODELIST:\t" $SLURM_JOB_NODELIST "\n\n"
 ### Start you code below ####
 module load anaconda				### load anaconda module (must present when working with conda environments)
 source activate tf-env				### activating environment, environment must be configured before running the job
-python "$CELL_HOME/code/learning/main.py" "$CELL_STORAGE/plates"					### replace with your own command
+python "$CELL_HOME/code/learning/main.py" "$CELL_STORAGE/plates" 24792 25912 24509 24633 25987 25680 25422 24517 25664 25575 26674 25945 24687 24752 24311 26622 26641 24594 25676 24774 26562 25997 26640 24562 25938 25708 24321 24735 26786 25571 26666 24294 24640 25985 24661

@@ -16,7 +16,7 @@ from evaluations import *
 # In[2] main function:
 
 
-def main(csv_folder, scale_method):
+def main(csv_folder, scale_method, csv_files):
     """
     This is the main function of the preprocessing steps.
     This function will iterate all over the sqlite files and do the following:
@@ -30,19 +30,17 @@ def main(csv_folder, scale_method):
         channel_task_y -> DataFrame, (instances,labels) for the test set
     """
 
-    csv_files = [_ for _ in listdir(csv_folder) if _.endswith(".csv")]
-
     # Holds error per plate
     treatments = {
-            'Linear': [],
-            'Ridge': [],
-            'DNN': []
-        }
+        'Linear': [],
+        'Ridge': [],
+        'DNN': []
+    }
     controls = {
-            'Linear': [],
-            'Ridge': [],
-            'DNN': []
-        }
+        'Linear': [],
+        'Ridge': [],
+        'DNN': []
+    }
     for test_plate in csv_files:
         # This is the current file that we will predict
         print(test_plate)
@@ -181,10 +179,20 @@ def extract_errors_from_group_by(group_by, test_plate, task_channel, task_cols):
 # In[4] Main:
 
 if __name__ == '__main__':
-    if len(argv) == 2:
-        print('Setting environment by input')
-        PROJECT_DIRECTORY = argv[1]
+    if len(argv) < 2:
+        print('Usage: main.py [plates directory]')
 
-    chdir(PROJECT_DIRECTORY)
+    project_dir = argv[1]
+
+    chdir(project_dir)
     makedirs('results', exist_ok=True)
-    main('csvs/', S_STD)
+
+    csv_fld = 'csv/'
+
+    csvs = [_ for _ in listdir(csv_fld) if _.endswith(".csv")]
+    if len(argv) > 2:
+        plates_numbers = argv[2:]
+        plates_csvs = [plt + '.csv' for plt in plates_numbers]
+        csvs = [plt for plt in csvs if plt in plates_csvs]
+
+    main(csv_fld, S_STD, csvs)
