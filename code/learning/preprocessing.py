@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tqdm import tqdm
 
-from learning.constants import *
+from constants import *
 
 
 # Preprocessing functions
@@ -32,7 +32,7 @@ def fit_scaler(df, scale_method):
 
 
 def scale_data(df, scaler):
-    scaled_df = pd.DataFrame(scaler.fit_transform(df), index=df.index, columns=df.columns)
+    scaled_df = pd.DataFrame(scaler.transform(df), index=df.index, columns=df.columns)
     scaled_df.fillna(0, inplace=True)
     return scaled_df
 
