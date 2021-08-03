@@ -1,7 +1,8 @@
 from os import path, listdir
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-from constants import ERROR_TYPE
+
+from learning.constants import ERROR_TYPE
 
 
 # In[1]:
@@ -20,10 +21,10 @@ def get_error(df_predict, df_true, multioutput='uniform_average'):
 # In[2]:
 
 
-def print_results(plate_number, channel, family, model, _type, metric, value):
+def print_results(plate_number, channel, family, model, _type, metric, value, inter_channel=True):
     """
     This function is creating a csv named: 'results' that contains all of the models’ performance (e.g. MSE) for each plate and each family of attributes
-    plate_number: ID of palte
+    plate_number: ID of plate
     channel: The channel we aim to predict
     family: features united by their charactheristics (e.g., Granularity, Texture)
     model: the model name
@@ -31,7 +32,8 @@ def print_results(plate_number, channel, family, model, _type, metric, value):
     metric: MSE/MAE
     value: value of the metric error
     """
-    results_path = 'results'
+    inter_str = '' if inter_channel else '1to1'
+    results_path = f'results{inter_str}'
     file_path = path.join(results_path, 'results.csv')
     files_list = listdir(results_path)
     if 'results.csv' not in files_list:

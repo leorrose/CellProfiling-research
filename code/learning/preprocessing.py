@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tqdm import tqdm
 
-from constants import *
+from learning.constants import *
 
 
 # Preprocessing functions
@@ -68,6 +68,20 @@ def split_by_channel(filename, task_channel):
     return x_features_df, y_df
 
 
+def take_channel(filename, task_channel):
+    # Data preparation
+    df = load_plate_csv(filename)
+    df.dropna(inplace=True)
+
+    general_cols, corr_cols, dict_channel_cols = list_columns(df)
+
+    x_df = df[dict_channel_cols[task_channel]]
+
+    y_df = x_df.copy()
+
+    return x_df, y_df
+
+
 def load_plate_csv(csv_file):
     """
     This function read a plate's csv file and give an indexed pandas dataframe
@@ -94,13 +108,16 @@ def list_columns(df):
     return general_cols, corr_cols, dict_channel_cols
 
 
-def split_train_test(path, csv_files, test_plate, task_channel):
+def split_train_test(path, csv_files, test_plate, task_channel, inter_channel=True):
     """
     This function prepare dataframes for the models
     test contain the data from one channel and train contains only mock from other plates
     """
     # Prepare test samples
-    df_test_x, df_test_y = split_by_channel(path + test_plate, task_channel)
+    if inter_channel:
+        df_test_x, df_test_y = split_by_channel(path + test_plate, task_channel)
+    else:
+        df_test_x, df_test_y = take_channel(path + test_plate, task_channel)
 
     df_test_mock_x = df_test_x[df_test_x.index.isin(['mock'], 1)]
     df_test_treated_x = df_test_x[df_test_x.index.isin(['treated'], 1)]
@@ -112,7 +129,11 @@ def split_train_test(path, csv_files, test_plate, task_channel):
     list_y_df = []
     for train_plate in tqdm(csv_files):
         if train_plate != test_plate:
-            curr_x, curr_y = split_by_channel(path + train_plate, task_channel)
+            if inter_channel:
+                curr_x, curr_y = split_by_channel(path + train_plate, task_channel)
+            else:
+                curr_x, curr_y = take_channel(path + test_plate, task_channel)
+
             curr_x = curr_x[curr_x.index.isin(['mock'], 1)]
             curr_y = curr_y.loc[curr_x.index]
 

@@ -8,15 +8,15 @@
 from os import chdir
 from sys import argv
 
-from preprocessing import *
-from training import *
-from evaluations import *
+from learning.evaluations import *
+from learning.preprocessing import *
+from learning.training import *
 
 
 # In[2] main function:
 
 
-def main(csv_folder, scale_method, csv_files):
+def main(csv_folder, scale_method, csv_files, inter_channel=True):
     """
     This is the main function of the preprocessing steps.
     This function will iterate all over the sqlite files and do the following:
@@ -35,13 +35,13 @@ def main(csv_folder, scale_method, csv_files):
 
         # Holds error per channel
         curr_treatments = {
-            'Linear': [],
-            'Ridge': [],
+            # 'Linear': [],
+            # 'Ridge': [],
             'DNN': []
         }
         curr_controls = {
-            'Linear': [],
-            'Ridge': [],
+            # 'Linear': [],
+            # 'Ridge': [],
             'DNN': []
         }
         for task_channel in tqdm(CHANNELS):
@@ -49,7 +49,7 @@ def main(csv_folder, scale_method, csv_files):
 
             # Load data
             df_test_mock_x, df_test_mock_y, df_test_treated_x, df_test_treated_y, df_train_x, df_train_y = \
-                split_train_test(csv_folder, csv_files, test_plate, task_channel)
+                split_train_test(csv_folder, csv_files, test_plate, task_channel, inter_channel=inter_channel)
 
             # Scale data
             x_scaler = fit_scaler(df_train_x, scale_method)
@@ -65,9 +65,10 @@ def main(csv_folder, scale_method, csv_files):
 
             # Models' Creation
             models = {
-                'Linear': create_LR(df_train_x_scaled, df_train_y_scaled),
-                'Ridge': create_Ridge(df_train_x_scaled, df_train_y_scaled),
-                'DNN': create_model_dnn(task_channel, df_train_x_scaled, df_train_y_scaled, test_plate)
+                # 'Linear': create_LR(df_train_x_scaled, df_train_y_scaled),
+                # 'Ridge': create_Ridge(df_train_x_scaled, df_train_y_scaled),
+                'DNN': create_model_dnn(task_channel, df_train_x_scaled, df_train_y_scaled, test_plate,
+                                        inter_channel=inter_channel)
             }
 
             # Models' Evaluation
@@ -82,9 +83,10 @@ def main(csv_folder, scale_method, csv_files):
         plate_controls = {model_type: pd.concat(ctrl_per_model, axis=1)
                           for model_type, ctrl_per_model in curr_controls.items()}
 
+        inter_str = '' if inter_channel else '1to1'
         for model_type in curr_treatments.keys():
-            err_path = fr'errors/{model_type}/{test_plate}'
-            makedirs(fr'errors/{model_type}', exist_ok=True)
+            err_path = fr'errors/{model_type}{inter_str}/{test_plate}'
+            makedirs(fr'errors/{model_type}{inter_str}', exist_ok=True)
             pd.concat([plate_controls[model_type], plate_treatments[model_type]]).to_csv(err_path)
 
 
@@ -176,20 +178,23 @@ def extract_errors_from_group_by(group_by, test_plate, task_channel, task_cols):
 
 if __name__ == '__main__':
     if len(argv) < 2:
-        print('Usage: main.py [plates directory]')
+        print('Usage: main.py [plates directory] [1to1/4to1]')
 
     project_dir = argv[1]
+    inter_str = argv[2]
+    inter_channel = inter_str == '4to1'
+    inter_str = '' if inter_channel else inter_str
 
     chdir(project_dir)
-    makedirs('results', exist_ok=True)
+    makedirs(f'results{inter_str}', exist_ok=True)
     makedirs('errors', exist_ok=True)
 
     csv_fld = 'csvs/'
 
     csvs = [_ for _ in listdir(csv_fld) if _.endswith(".csv")]
-    if len(argv) > 2:
-        plates_numbers = argv[2:]
+    if len(argv) > 3:
+        plates_numbers = argv[3:]
         plates_csvs = [plt + '.csv' for plt in plates_numbers]
         csvs = [plt for plt in csvs if plt in plates_csvs]
 
-    main(csv_fld, S_STD, csvs)
+    main(csv_fld, S_STD, csvs, inter_channel=inter_channel)
