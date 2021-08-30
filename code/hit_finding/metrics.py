@@ -2,6 +2,7 @@ from itertools import cycle
 from multiprocessing import Pool
 
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import StandardScaler
 
 from hit_finding.constants import *
@@ -128,6 +129,109 @@ def extract_score(plate_csv, by_well=True, by_channel=True, abs_zscore=True, wel
 
     return data
 
+def extract_dist_score(plate_csv, well_type='treated', **kwargs):
+    df = load_plate_csv(plate_csv)
+    df = df.groupby(by=['Plate', LABEL_FIELD, 'Metadata_broad_sample', 'Image_Metadata_Well']).apply(
+                lambda g: g.mean())
+
+    def calculate_distance_from(v):
+        return lambda x: np.linalg.norm(x - v)
+
+
+    _, _, channels = list_columns(df)
+    all_cols = [col for ch_cols in channels.values() for col in ch_cols]
+    channels['ALL'] = all_cols
+
+    scores = []
+    for channel, cols in channels.items():
+        df_mck = df[df.index.isin(['mock'], 1)][cols]
+        mck_profile = df_mck.median()
+        df_trt = df[df.index.isin([well_type], 1)][cols]
+
+        dist_func = calculate_distance_from(mck_profile)
+        trt_dist = df_trt.apply(dist_func, axis=1)
+        del df_trt
+        
+        trt_dist.name = channel
+
+        scores.append(trt_dist)
+
+    del df    
+
+    scores_df = pd.concat(scores, axis=1)
+    return scores_df
+
+def extract_dist_score_norm_before(plate_csv, well_type='treated', **kwargs):
+    df = load_pure_zscores(plate_csv, kwargs['raw'], kwargs['inter_channel'])
+
+    def calculate_distance_from(v):
+        return lambda x: np.linalg.norm(x - v)
+
+
+    _, _, channels = list_columns(df)
+    all_cols = [col for ch_cols in channels.values() for col in ch_cols]
+    channels['ALL'] = all_cols
+
+    scores = []
+    for channel, cols in channels.items():
+        df_mck = df[df.index.isin(['mock'], 1)][cols]
+        mck_profile = df_mck.median()
+        df_trt = df[df.index.isin([well_type], 1)][cols]
+
+        dist_func = calculate_distance_from(mck_profile)
+        trt_dist = df_trt.apply(dist_func, axis=1)
+        del df_trt
+        
+        trt_dist.name = channel
+
+        scores.append(trt_dist)
+
+    del df    
+
+    scores_df = pd.concat(scores, axis=1)
+    return scores_df
+
+def extract_dist_score_norm_after(plate_csv, well_type='treated', **kwargs):
+    df = load_plate_csv(plate_csv)
+    df = df.groupby(by=['Plate', LABEL_FIELD, 'Metadata_broad_sample', 'Image_Metadata_Well']).apply(
+                lambda g: g.mean())
+
+    def calculate_distance_from(v):
+        return lambda x: np.linalg.norm(x - v)
+
+
+    _, _, channels = list_columns(df)
+    all_cols = [col for ch_cols in channels.values() for col in ch_cols]
+    channels['ALL'] = all_cols
+
+    scores = []
+    for channel, cols in channels.items():
+        df_mck = df[df.index.isin(['mock'], 1)][cols]
+        mck_profile = df_mck.median()
+        df_trt = df[df.index.isin([well_type], 1)][cols]
+
+        dist_func = calculate_distance_from(mck_profile)
+        mck_dist = df_trt.apply(dist_func, axis=1)
+        del df_mck
+        trt_dist = df_trt.apply(dist_func, axis=1)
+        del df_trt
+        
+        scaler = StandardScaler()
+        scaler.fit(mck_dist.to_numpy().reshape(-1,1))
+        del mck_dist
+
+        cur_scores = pd.Series(scaler.transform(trt_dist.to_numpy().reshape(-1,1)).reshape(-1),
+                               index=trt_dist.index,
+                               name=channel)
+        del trt_dist
+
+        scores.append(cur_scores)
+
+    del df    
+
+    scores_df = pd.concat(scores, axis=1)
+    return scores_df
+
 
 def extract_raw_and_err(score_func, plate_csv, by_well=True, well_type='treated', threshold=None):
     print('.', sep='', end='')
@@ -138,8 +242,8 @@ def extract_raw_and_err(score_func, plate_csv, by_well=True, well_type='treated'
     if threshold is not None:
         params['thresh'] = threshold
 
-    err = score_func(f'{err_fld}/{plate_csv}', abs_zscore=False, raw=False, **params)
-    raw = score_func(f'{raw1to1_fld}/{plate_csv}', abs_zscore=True, raw=True, inter_channel=False, **params)
+    err = score_func(f'{err_fld}/{plate_csv}', abs_zscore=False, raw=False, inter_channel=True, **params)
+    raw = score_func(f'{raw_fld}/{plate_csv}', abs_zscore=True, raw=True, inter_channel=True, **params)
 
     res = err.join(raw, how='inner', lsuffix='_map', rsuffix='_raw')
     del err
@@ -153,7 +257,7 @@ def extract_raw_and_err(score_func, plate_csv, by_well=True, well_type='treated'
 
 
 def extract_scores_from_all(score_func, by_well=True, well_type='treated', threshold=None):
-    p = Pool(6)
+    p = Pool(3)
 
     plates = [f[1] for f in files]
     score_results = p.starmap(extract_raw_and_err,
