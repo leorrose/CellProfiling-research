@@ -3,7 +3,7 @@ from multiprocessing import Pool
 from urllib import request
 
 CHANNELS = ['Hoechst', 'ERSyto', 'ERSytoBleed', 'Ph_golgi', 'Mito']
-dest_path = '/storage/users/g-and-n/plates_imgs'
+dest_path = '/storage/users/g-and-n/plates/images'
 
 def download_plate(plate):
     plate_path = f'{dest_path}/{plate}'
