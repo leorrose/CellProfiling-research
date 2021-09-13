@@ -6,10 +6,10 @@ from os import scandir, path, makedirs, chdir
 from sys import argv
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from learning.constants import CHANNELS, LABEL_FIELD
+from learning_tabular.constants import CHANNELS, LABEL_FIELD
 
 # Warning - need openpyxl package
-from learning.preprocessing import list_columns, load_plate_csv
+from learning_tabular.preprocessing import list_columns, load_plate_csv
 
 
 # Old version

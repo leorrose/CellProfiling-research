@@ -6,8 +6,8 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 
 from hit_finding.constants import *
-from learning.constants import CHANNELS, LABEL_FIELD
-from learning.preprocessing import load_plate_csv, list_columns
+from learning_tabular.constants import CHANNELS, LABEL_FIELD
+from learning_tabular.preprocessing import load_plate_csv, list_columns
 
 
 def load_pure_zscores(plate_csv, raw, by_well=True, inter_channel=True):

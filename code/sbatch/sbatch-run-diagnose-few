@@ -24,4 +24,4 @@ echo -e "SLURM_JOB_NODELIST:\t" $SLURM_JOB_NODELIST "\n\n"
 ### Start you code below ####
 module load anaconda				### load anaconda module (must present when working with conda environments)
 source activate tf-env				### activating environment, environment must be configured before running the job
-python "$CELL_HOME/code/learning/main.py" "$CELL_STORAGE/few_plates" "4to1"			### replace with your own command
+python "$CELL_HOME/code/learning_tabular/main.py" "$CELL_STORAGE/few_plates" "4to1"			### replace with your own command

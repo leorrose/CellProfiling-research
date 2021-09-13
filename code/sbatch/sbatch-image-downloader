@@ -24,4 +24,4 @@ echo -e "SLURM_JOB_NODELIST:\t" $SLURM_JOB_NODELIST "\n\n"
 ### Start you code below ####
 module load anaconda				### load anaconda module (must present when working with conda environments)
 source activate tf-env				### activating environment, environment must be configured before running the job
-python "$CELL_HOME/code/plateImageDownloader.py" 24294 #24792 25912 24509 24633 25987
+python "$CELL_HOME/code/plateImageDownloader.py" 25938 25985 24311 #24294 24792 25912 24509 24633 25987
