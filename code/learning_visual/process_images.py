@@ -1,8 +1,3 @@
-
-
-
-from visuals.visualize import show_input_and_target
-
 def process_image(model, input, input_size, input_channels):
     # based on https://discuss.pytorch.org/t/creating-nonoverlapping-patches-from-3d-data-and-reshape-them-back-to-the-image/51210/6
 
@@ -10,7 +5,7 @@ def process_image(model, input, input_size, input_channels):
     h, w = input_size, input_size
 
     if input_channels == 5:
-        input_c, output_c = 5,5
+        input_c, output_c = 5, 5
     elif input_channels == 1:
         input_c, output_c = 1, 1
     else:

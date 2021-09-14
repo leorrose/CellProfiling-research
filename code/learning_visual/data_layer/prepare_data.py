@@ -43,12 +43,14 @@ def load_data(args):
                                                               train_size=args.split_ratio,
                                                               shuffle=True)
 
-    datasets = create_datasets(mt_df, args.plates_split, partitions, args.images_path, args.target_channel,
+    partitions = partitions_idx_to_dfs(mt_df, partitions)
+
+    datasets = create_datasets(args.plates_split, partitions, args.images_path, args.target_channel,
                                args.input_size, args.device, args.num_input_channels)
     print_data_statistics(datasets)
-    dataloaders = create_dataloaders(datasets, partitions, args.batch_size)
+    data_loaders = create_data_loaders(datasets, partitions, args.batch_size, args.num_data_workers)
 
-    return dataloaders
+    return data_loaders
 
 
 def split_by_plates(df, train_plates, test_plates=None, test_samples_per_plate=None) -> dict:
@@ -71,16 +73,25 @@ def split_by_plates(df, train_plates, test_plates=None, test_samples_per_plate=N
     return partitions
 
 
-def create_datasets(mt_df, plates_split, partitions, data_dir, target_channel, input_size, device,
+def partitions_idx_to_dfs(mt_df, partitions):
+    partitions = {
+        'train': mt_df.iloc[partitions['train']],
+        'val': mt_df.iloc[partitions['val']],
+        'test': {}
+    }
+
+    for plate in list(partitions['test'].keys()):
+        partitions['test'][plate] = {}
+        for key in partitions['test'][plate].keys():
+            partitions['test'][plate][key] = mt_df.iloc[partitions['test'][plate][key]]
+
+    return partitions
+
+
+def create_datasets(plates_split, partitions, data_dir, target_channel, input_size, device,
                     num_input_channels):
     train_plates, test_plates = plates_split
-    # mean, std = [0.5,0.4,0.3,0.2], [0.1,0.1,0.1,0.1]
-    # mean, std = calc_mean_and_std(partitions['train'])
-
-    # Y_mean, Y_std = mean[target_channel], std[target_channel]
-    # X_mean, X_std = mean.remove(target_channel), std.remove(target_channel)
-    train_plates = []  # TODO: More appropriate way to disable recalculating
-    mean, std = get_data_stats(mt_df, partitions['train'], train_plates, data_dir, device)
+    mean, std = get_data_stats(partitions['train'], train_plates, data_dir, device)
 
     train_transforms = transforms.Compose([
         transforms.RandomCrop(input_size),
@@ -93,11 +104,11 @@ def create_datasets(mt_df, plates_split, partitions, data_dir, target_channel, i
     ])
 
     datasets = {
-        'train': CovidDataset(mt_df, partitions['train'], target_channel, root_dir=data_dir, transform=train_transforms,
+        'train': CovidDataset(partitions['train'], target_channel, root_dir=data_dir, transform=train_transforms,
                               input_channels=num_input_channels),
-        'val': CovidDataset(mt_df, partitions['val'], target_channel, root_dir=data_dir, transform=train_transforms,
+        'val': CovidDataset(partitions['val'], target_channel, root_dir=data_dir, transform=train_transforms,
                             input_channels=num_input_channels),
-        'val_for_test': CovidDataset(mt_df, partitions['val'], target_channel, root_dir=data_dir,
+        'val_for_test': CovidDataset(partitions['val'], target_channel, root_dir=data_dir,
                                      transform=test_transforms, is_test=True, input_channels=num_input_channels),
         'test': {}
     }
@@ -106,7 +117,7 @@ def create_datasets(mt_df, plates_split, partitions, data_dir, target_channel, i
         datasets['test'][plate] = {}
         for key in partitions['test'][plate].keys():
             datasets['test'][plate][key] = \
-                CovidDataset(mt_df, partitions['test'][plate][key], target_channel, root_dir=data_dir,
+                CovidDataset(partitions['test'][plate][key], target_channel, root_dir=data_dir,
                              transform=test_transforms, is_test=True, input_channels=num_input_channels)
 
     return datasets
@@ -122,36 +133,37 @@ def print_data_statistics(datasets):
                 len(datasets['test'][plate][key])) + ' images')
 
 
-def get_data_stats(mt_df, train_inds, train_plates, data_dir, device):
-    if not train_plates:  # TODO: Replace with actual numbers from more plates
+def get_data_stats(train_mt_df, train_plates, data_dir, device):
+    # TODO: More appropriate way to disable recalculating
+    # TODO: Replace with actual numbers from more plates
+    if not train_plates:
         mean = [0.011394727043807507, 0.00655326247215271, 0.011172938160598278, 0.011629479937255383,
                 0.01122655812650919]
         std = [0.020888447761535645, 0.022583933547139168, 0.021113308146595955, 0.021329505369067192,
                0.020590465515851974]
     else:
         logging.info('calculating mean and std...')
-        mean, std = calc_mean_and_std(mt_df, train_inds, data_dir, len(train_plates), device)
+        mean, std = calc_mean_and_std(train_mt_df, data_dir, len(train_plates), device)
 
     return mean, std
 
 
-def calc_mean_and_std(mt_df, inds, data_dir, num_batches, device):
-    # calculate_mean
-
-    train_data = dataset.CovidDataset(mt_df, inds, root_dir=data_dir, target_channel=None,
+def calc_mean_and_std(mt_df, data_dir, num_batches, device):
+    train_data = dataset.CovidDataset(mt_df, root_dir=data_dir, target_channel=None,
                                       for_data_statistics_calc=True)
     batch_size = int(len(train_data) / num_batches)
     # TODO: Why this size?
     batch_size = 512
     train_loader = DataLoader(train_data, batch_size=batch_size)
-    num_channels = len(dataset.DEFAULT_CHANNELS)
+    num_channels = len(dataset.Channels)
 
     mean = torch.zeros(num_channels).to(device)
     std = torch.zeros(num_channels).to(device)
 
     for images in train_loader:
         images = images.to(device)
-        batch_mean, batch_std = torch.std_mean(images.float().div(VMAX), dim=(0, 1, 2))
+        # TODO: Divide by maximum value was removed
+        batch_mean, batch_std = torch.std_mean(images.float(), dim=(0, 1, 2))
 
         mean += batch_mean
         std += batch_std
@@ -164,8 +176,8 @@ def calc_mean_and_std(mt_df, inds, data_dir, num_batches, device):
     return mean.tolist(), std.tolist()
 
 
-def create_dataloaders(datasets, partitions, batch_size, num_workers=32) -> dict:
-    dataloaders = {
+def create_data_loaders(datasets, partitions, batch_size, num_workers=32) -> dict:
+    data_loaders = {
         'train': DataLoader(datasets['train'], batch_size=batch_size,
                             shuffle=True, num_workers=num_workers),
         'val': DataLoader(datasets['val'], batch_size=batch_size,
@@ -176,10 +188,10 @@ def create_dataloaders(datasets, partitions, batch_size, num_workers=32) -> dict
     }
 
     for plate in list(partitions['test'].keys()):
-        dataloaders['test'][plate] = {}
+        data_loaders['test'][plate] = {}
         for key in partitions['test'][plate].keys():
-            dataloaders['test'][plate][key] = \
+            data_loaders['test'][plate][key] = \
                 DataLoader(datasets['test'][plate][key], batch_size=1,
                            shuffle=False, num_workers=num_workers)
 
-    return dataloaders
+    return data_loaders

@@ -4,8 +4,9 @@ import cv2
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-
 from visuals.visualize import show_input_and_target
+
+from enum import Enum, auto
 
 use_cuda = torch.cuda.is_available()
 print("USE CUDA=" + str(use_cuda))
@@ -13,10 +14,15 @@ FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
 LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
 Tensor = FloatTensor
 
-# DATA_DIR, METADATA_PATH, _ ,IMAGES_PATH, _ = config.get_paths()
 
-DEFAULT_CHANNELS = ('AGP', 'DNA', 'ER', 'Mito', 'RNA')
-# TODO: Change map to string channel names
+class Channels(Enum):
+    AGP = auto()
+    DNA = auto()
+    ER = auto()
+    MITO = auto()
+    RNA = auto()
+
+
 RGB_MAP = {
     1: {
         'rgb': np.array([19, 0, 249]),
@@ -45,14 +51,14 @@ RGB_MAP = {
 }
 
 
-def convert_tensor_to_rgb(t, channels=DEFAULT_CHANNELS, vmax=255, rgb_map=RGB_MAP):
+def convert_tensor_to_rgb(t, channels=Channels, vmax=65535, rgb_map=RGB_MAP):
     """
     Converts and returns the image data as RGB image
     Parameters
     ----------
     t : np.ndarray
         original image data
-    channels : list of int
+    channels : Enum
         channels to include
     vmax : int
         the max value used for scaling
@@ -66,11 +72,11 @@ def convert_tensor_to_rgb(t, channels=DEFAULT_CHANNELS, vmax=255, rgb_map=RGB_MA
     colored_channels = []
     for i, channel in enumerate(channels):
         x = (t[:, :, i] / vmax) / \
-            ((rgb_map[channel]['range'][1] - rgb_map[channel]['range'][0]) / 255) + \
-            rgb_map[channel]['range'][0] / 255
+            ((rgb_map[channel.value]['range'][1] - rgb_map[channel.value]['range'][0]) / 255) + \
+            rgb_map[channel.value]['range'][0] / 255
         x = np.where(x > 1., 1., x)
         x_rgb = np.array(
-            np.outer(x, rgb_map[channel]['rgb']).reshape(512, 512, 3),
+            np.outer(x, rgb_map[channel.value]['rgb']).reshape(512, 512, 3),
             dtype=int)
         colored_channels.append(x_rgb)
     im = np.array(np.array(colored_channels).sum(axis=0), dtype=int)
@@ -82,7 +88,6 @@ class CovidDataset(Dataset):
 
     def __init__(self,
                  metadata_df,
-                 inds,  # TODO: Where is the use of inds????
                  target_channel,
                  root_dir,
                  input_channels=4,
@@ -94,7 +99,7 @@ class CovidDataset(Dataset):
         super(Dataset).__init__()
         self.metadata_file = metadata_df
         self.root_dir = root_dir
-        self.target_channel = target_channel
+        self.target_channel = target_channel.value if target_channel else None
         self.input_channels = input_channels
         self.transform = transform
         self.im_shape = im_shape
@@ -141,7 +146,7 @@ class CovidDataset(Dataset):
             filename = metadata_row.get(channel)
         elif plate is not None and well is not None and site is not None:
             filename = \
-            self.metadata_file.query(f'Plate == {plate} and Well == "{well}" and Site == {site}')[channel].iat[0]
+                self.metadata_file.query(f'Plate == {plate} and Well == "{well}" and Site == {site}')[channel].iat[0]
         else:
             raise 'image_path, need to provide plate-well-site or index'
 
@@ -164,12 +169,9 @@ class CovidDataset(Dataset):
         -------
         np.ndarray the image data of the site
         """
-
-        input_channels = list(DEFAULT_CHANNELS)
-
         input_paths = [
-            self.image_path(c, plate, well, site, index)
-            for c in input_channels
+            self.image_path(c.name, plate, well, site, index)
+            for c in Channels
         ]
         return self.load_images_as_tensor(input_paths)
 

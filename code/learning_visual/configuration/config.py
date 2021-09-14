@@ -1,12 +1,14 @@
 import logging
 import os
+import random
 import sys
 from argparse import ArgumentParser
-import random
-import torch
-import numpy as np
 from pathlib import Path
-from data_layer.dataset import CovidDataset
+
+import numpy as np
+import torch
+
+from data_layer.dataset import Channels
 from util.files_operations import make_folder
 
 print('__Python VERSION:', sys.version)
@@ -26,80 +28,63 @@ LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
 Tensor = FloatTensor
 
 
-def parse_args(exp_num=None, num_input_channels=4, target_channel=1, model_type='UNET4TO1', debug=False):
-
+def parse_args(exp_num=None, num_input_channels=4, target_channel=Channels.AGP, model_type='UNET4TO1'):
     parser = ArgumentParser()
-    # parser.add_argument('-m','--mode', type = str,  choices=('train', 'val', 'predict'))
-    DATA_DIR, METADATA_PATH, LOG_DIR, IMAGES_PATH, EXP_DIR = get_paths(exp_num, model_type, target_channel)
+    parser.add_argument('-m', '--mode', type=str, default='train', choices=('train', 'predict'))
 
+    DATA_DIR, METADATA_PATH, LOG_DIR, IMAGES_PATH, EXP_DIR = get_paths(exp_num, model_type, target_channel)
     parser.add_argument('--data_path', type=Path, default=DATA_DIR,
                         help='path to the data root. It assumes format like in Kaggle with unpacked archives')
     parser.add_argument('--metadata_path', type=Path, default=METADATA_PATH,
-            help='path to the data root. It assumes format like in Kaggle with unpacked archives')
+                        help='path to the data root. It assumes format like in Kaggle with unpacked archives')
     parser.add_argument('--images_path', type=Path, default=IMAGES_PATH,
                         help='path to the data root. It assumes format like in Kaggle with unpacked archives')
-
     parser.add_argument('--log_dir', type=Path, default=LOG_DIR,
                         help='path to experiment logs.')
     parser.add_argument('--exp_dir', type=Path, default=EXP_DIR,
                         help='path to experiment results.')
-    parser.add_argument('--dataset', default=CovidDataset, #choices=(CovidDataset,CovidSupervisedDataset),
-                        help='dataset class')
-    parser.add_argument('--plates_split', type=list, default=[[1, 2, 3, 4, 5], [25]],
+
+    parser.add_argument('--plates_split', type=list,
+                        default=[[24509, 24633, 24792, 25912], [24294, 24311, 25938, 25985, 25987]],
                         help='plates split between train and test. left is train and right is test')
     parser.add_argument('--test_samples_per_plate', type=int, default=-1,
                         help='number of test samples for each plate. if None, all plates are taken')
 
-    parser.add_argument('--split-ratio', type=int, default=0.8,
+    parser.add_argument('--split-ratio', type=float, default=0.8,
                         help='split ratio between train and validation. value in [0,1]')
 
-    parser.add_argument('--data-split-seed', type=int, default=0,
-            help='seed for splitting experiments for folds')
-    parser.add_argument('--num-data-workers', type=int, default=4,
-            help='number of data loader workers')
-    parser.add_argument('--device',type=str, default=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+    parser.add_argument('--num-data-workers', type=int, default=32,
+                        help='number of data loader workers')
+    parser.add_argument('--device', type=str, default=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
                         help='device for running code')
-    parser.add_argument('--seed', type=int, default=100,
-            help='global seed (for weight initialization, data sampling, etc.). '
-                 'If not specified it will be randomized (and printed on the log)')
+    parser.add_argument('--seed', type=int, default=42,
+                        help='global seed (for weight initialization, data sampling, etc.). '
+                             'If not specified it will be randomized (and printed on the log)')
 
-    parser.add_argument('--target_channel', type=int, default=target_channel, choices=(1,2,3,4,5),
+    parser.add_argument('--target_channel', type=str, default=target_channel.name, choices=('AGP', 'DNA', 'ER', 'Mito', 'RNA'),
                         help='the channel predicted by the network')
-    parser.add_argument('--num_input_channels', type=int, default=num_input_channels, choices = (1,4,5),
+    parser.add_argument('--num_input_channels', type=int, default=num_input_channels, choices=(1, 4, 5),
                         help='defines what autoencoder is trained (4to1, 1to1, 5to5)')
     parser.add_argument('--input_size', type=int, default=128,
                         help='width and hight input into the network')
 
     parser.add_argument('--batch_size', type=int, default=36)
-    # parser.add_argument('--gradient-accumulation', type=int, default=2,
-    #         help='number of iterations for gradient accumulation')
     parser.add_argument('--epochs', type=int, default=20)
     parser.add_argument('--lr', type=float, default=1.5e-4)
     # parser.add_argument('-minimize_net_factor', type=int, default=4,
     #                     help='reduces the network number of convolution maps by a factor')
 
     parser.add_argument('--checkpoint', type=str,
-                        default='lightning_logs/version_66/checkpoints/epoch=18-step=113.ckpt',
+                        default='',
                         help='path to load existing model from')
-
 
     # args = parser.parse_known_args()
     args = parser.parse_known_args()[0]
-    # args.model_args = {'lr': args.lr, 'n_classes': n_classes, 'input_size': args.input_size,'minimize_net_factor': args.minimize_net_factor}
-    # if args.mode == 'train':
-    #     assert args.save is not None
-    # if args.mode == 'val':
-    #     assert args.save is None
-    # if args.mode == 'predict':
-    #     assert args.load is not None
-    #     assert args.save is None
 
     if args.seed is None:
         args.seed = random.randint(0, 10 ** 9)
 
-    if debug:
-        args.test_samples_per_plate = 5
-        args.epochs = 3
+    args.target_channel = eval(f'Channels.{args.target_channel}')
 
     setup_logging(args)
     setup_determinism(args)
@@ -107,28 +92,22 @@ def parse_args(exp_num=None, num_input_channels=4, target_channel=1, model_type=
     return args
 
 
-def get_paths(exp_num=None, model_type = 'UNET4TO1', target_channel=1):
-
-    # TODO: what is the difference?
-    # if use_cuda:
-    #     ROOT_DIR = f"{Path(__file__).parent.parent.parent.parent}/alonshp"
-    # else:
-    #     ROOT_DIR = Path(__file__).parent.parent.parent
+def get_paths(exp_num=None, model_type='UNET4TO1', target_channel=Channels.AGP):
     from datetime import datetime
     ROOT_DIR = '/home/naorko/images_run/{Y}_{m:02}_{d:02}_{H:02}_{M:02}_{S:02}'.format(
-            Y=datetime.now().year,
-            m=datetime.now().month,
-            d=datetime.now().day,
-            H=datetime.now().hour,
-            M=datetime.now().minute,
-            S=datetime.now().second)
+        Y=datetime.now().year,
+        m=datetime.now().month,
+        d=datetime.now().day,
+        H=datetime.now().hour,
+        M=datetime.now().minute,
+        S=datetime.now().second)
 
     DATA_DIR = f"/storage/users/g-and-n/plates"
     LOG_DIR = f"{ROOT_DIR}/log_dir"
     EXP_DIR = f"{ROOT_DIR}/exp_dir"
     # if exp_num is None:
     #     exp_num = get_exp_num(EXP_DIR)
-    EXP_DIR = os.path.join(EXP_DIR, str(exp_num),model_type, "channel " + str(target_channel))
+    EXP_DIR = os.path.join(EXP_DIR, str(exp_num), model_type, "channel " + target_channel.name)
     # EXP_DIR = os.path.join(EXP_DIR, str(exp_num), "channel " + str(target_channel))
     # exp_num = get_exp_num(EXP_DIR)
     if exp_num is not None:
@@ -160,30 +139,9 @@ def setup_determinism(args):
 
 # TODO: Dynamic checkpoint location
 def get_checkpoint(LOG_DIR, model_name, target_channel):
-    if model_name == 'UNET4TO1':
-        if target_channel == 1:
-            checkpoint = f"{LOG_DIR}/UNET4TO1 on channel1/version_1/checkpoints/epoch=18-step=341.ckpt"
-        elif target_channel == 2:
-            checkpoint = f"{LOG_DIR}/UNET4TO1 on channel2/version_0/checkpoints/epoch=17-step=323.ckpt"
-        elif  target_channel == 3:
-            checkpoint = f"{LOG_DIR}/UNET4TO1 on channel3/version_0/checkpoints/epoch=19-step=359.ckpt"
-        elif target_channel == 4:
-            checkpoint =f"{LOG_DIR}/UNET4TO1 on channel4/version_0/checkpoints/epoch=16-step=305.ckpt"
-
-    elif model_name == 'UNET5TO5':
-            checkpoint = f"{LOG_DIR}/UNET on channel1/version_16/checkpoints/epoch=23-step=431.ckpt"
-
-    elif model_name == 'UNET1TO1':
-        if target_channel == 1:
-            checkpoint = f"{LOG_DIR}/UNET on channel1/version_24/checkpoints/epoch=19-step=359.ckpt"
-        if target_channel == 2:
-            checkpoint = f"{LOG_DIR}/UNET1TO1 on channel2/version_2/checkpoints/epoch=15-step=287.ckpt"
-        if target_channel == 3:
-            checkpoint = f"{LOG_DIR}/UNET1TO1 on channel3/version_0/checkpoints/epoch=19-step=359.ckpt"
-        elif target_channel==4:
-            checkpoint = f"{LOG_DIR}/UNET1TO1 on channel4/version_1/checkpoints/epoch=16-step=305.ckpt"
-        elif target_channel == 5:
-            checkpoint = f"{LOG_DIR}/UNET1TO1 on channel5/version_0/checkpoints/epoch=19-step=359.ckpt"
+    # checkpoint = f"{LOG_DIR}/{model_name} on channel{
+    # target_channel.name}/version_1/checkpoints/epoch=18-step=341.ckpt"
+    checkpoint = None
 
     if 'checkpoint' not in locals():
         checkpoint = None
@@ -193,7 +151,6 @@ def get_checkpoint(LOG_DIR, model_name, target_channel):
 
 def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 # def get_exp_num(EXP_DIR):
 #     num=0
