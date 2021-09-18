@@ -17,11 +17,10 @@
 #SBATCH --cpus-per-task=4			### number of CPU cores
 
 ### Print some data to output file ###
-echo `date`
-echo -e "\nSLURM_JOBID:\t\t" $SLURM_JOBID
+echo `date`echo -e "\nSLURM_JOBID:\t\t" $SLURM_JOBID
 echo -e "SLURM_JOB_NODELIST:\t" $SLURM_JOB_NODELIST "\n\n"
 
 ### Start you code below ####
 module load anaconda				### load anaconda module (must present when working with conda environments)
 source activate tf-env				### activating environment, environment must be configured before running the job
-python $CELL_HOME/code/plateMetadataDownloader.py $CELL_STORAGE/plates -l 24294 24509 24619 24687 24792 25664 25912 25987 26577 26666 24300 24517 24633 24735 25422 25676 25937 25997 26622 26674 24303 24562 24640 24752 25492 25680 25938 26562 26640 26765 24311 24594 24654 24773 25571 25686 25945 26563 26641 26771 24321 24617 24661 24774 25575 25708 25985 26576 26662 26786
+python $CELL_STORAGE/CellProfiling-research/code/plateDownloader.py $CELL_STORAGE/plates -l 24294 24509 24619 24687 24792 25664 25912 25987 26577 26666 24300 24517 24633 24735 25422 25676 25937 25997 26622 26674 24303 24562 24640 24752 25492 25680 25938 26562 26640 26765 24311 24594 24654 24773 25571 25686 25945 26563 26641 26771 24321 24617 24661 24774 25575 25708 25985 26576 26662 26786
