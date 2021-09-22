@@ -17,7 +17,7 @@ from visuals.visualize import show_input_and_target
 
 
 def test_by_partition(model, test_dataloaders, input_size, input_channels, exp_dir=None):
-    res = {}
+    # res = {}
     res = pd.DataFrame()
     for plate in list(test_dataloaders):
         # res[plate] = {}
@@ -39,7 +39,7 @@ def test(model, data_loader, input_size, input_channels=4, title='', save_dir=''
     for i, (input, target, ind) in tqdm(enumerate(data_loader), total=len(data_loader)):
 
         # deformation to patches and reconstruction based on https://discuss.pytorch.org/t/creating-nonoverlapping-patches-from-3d-data-and-reshape-them-back-to-the-image/51210/6
-        rec = data_loader.dataset.metadata_file.iloc[ind]
+        rec = data_loader.dataset.metadata_file.iloc[ind].drop([c.name for c in Channels], axis=1)
         pred = process_image(model, input, input_size, input_channels)
         pcc, p_value = scipy.stats.pearsonr(pred.flatten(), target.cpu().detach().numpy().flatten())
         results = results.append(rec, ignore_index=True)
