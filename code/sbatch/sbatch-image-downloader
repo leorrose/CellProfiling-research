@@ -13,7 +13,7 @@
 #SBATCH --mail-type=END			### conditions when to send the email. ALL,BEGIN,END,FAIL, REQUEU, NONE
 
 ##SBATCH --gres=gpu:1				### number of GPUs, ask for more than 1 only if you can parallelize your code for multi GPU
-##SBATCH --mem=32G				### ammount of RAM memory
+##SBATCH --mem=32G				### amount of RAM memory
 ##SBATCH --cpus-per-task=4			### number of CPU cores
 
 ### Print some data to output file ###
@@ -24,4 +24,6 @@ echo -e "SLURM_JOB_NODELIST:\t" $SLURM_JOB_NODELIST "\n\n"
 ### Start you code below ####
 module load anaconda				### load anaconda module (must present when working with conda environments)
 source activate tf-env				### activating environment, environment must be configured before running the job
-python "$CELL_HOME/code/plateImageDownloader.py" 25938 25985 24311 #24294 24792 25912 24509 24633 25987
+python "$CELL_HOME/code/plateImageDownloader.py" 24619 24773 25492 26563 25937 26576 26765
+##25686 26577 26662 26771 24300 24617 24654 24303
+##24619 24773 25492 26563 25937 26576 26765

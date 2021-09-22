@@ -113,7 +113,7 @@ def print_exp_description(Model, args, kwargs):
 
 
 if __name__ == '__main__':
-    exp_num = 3  # if None, new experiment directory is created with the next available number
+    exp_num = 1  # if None, new experiment directory is created with the next available number
     description = 'Checking 4to1 prediction on AGP'
     DEBUG = False
 
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     ]
 
     print(description)
-    channels_to_predict = [Channels.AGP]
+    channels_to_predict = list(Channels)
 
     for model in models:
         for target_channel in channels_to_predict:
@@ -132,7 +132,7 @@ if __name__ == '__main__':
             args = config.parse_args(exp_num, target_channel=target_channel, model_type=model.name)
             args.num_input_channels = model.value[2]['n_input_channels']
 
-            args.mode = 'train'
+            args.mode = 'predict'  # 'train'
             args.plates_split = [[24509, 24633, 24792, 25912], [24294, 24311, 25938, 25985, 25987]]
 
             args.test_samples_per_plate = None

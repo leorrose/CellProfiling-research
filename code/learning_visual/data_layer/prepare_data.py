@@ -74,24 +74,24 @@ def split_by_plates(df, train_plates, test_plates=None, test_samples_per_plate=N
 
 
 def partitions_idx_to_dfs(mt_df, partitions):
-    partitions = {
+    df_partitions = {
         'train': mt_df.iloc[partitions['train']],
         'val': mt_df.iloc[partitions['val']],
         'test': {}
     }
 
     for plate in list(partitions['test'].keys()):
-        partitions['test'][plate] = {}
+        df_partitions['test'][plate] = {}
         for key in partitions['test'][plate].keys():
-            partitions['test'][plate][key] = mt_df.iloc[partitions['test'][plate][key]]
+            df_partitions['test'][plate][key] = mt_df.iloc[partitions['test'][plate][key]]
 
-    return partitions
+    return df_partitions
 
 
 def create_datasets(plates_split, partitions, data_dir, target_channel, input_size, device,
                     num_input_channels):
     train_plates, test_plates = plates_split
-    mean, std = get_data_stats(partitions['train'], train_plates, data_dir, device)
+    mean, std = get_data_stats(partitions['train'], train_plates, data_dir, target_channel, device)
 
     train_transforms = transforms.Compose([
         transforms.RandomCrop(input_size),
@@ -133,14 +133,14 @@ def print_data_statistics(datasets):
                 len(datasets['test'][plate][key])) + ' images')
 
 
-def get_data_stats(train_mt_df, train_plates, data_dir, device):
+def get_data_stats(train_mt_df, train_plates, data_dir, target_channel, device):
     # TODO: More appropriate way to disable recalculating
     # TODO: Replace with actual numbers from more plates
+    train_plates = []
     if not train_plates:
-        mean = [0.011394727043807507, 0.00655326247215271, 0.011172938160598278, 0.011629479937255383,
-                0.01122655812650919]
-        std = [0.020888447761535645, 0.022583933547139168, 0.021113308146595955, 0.021329505369067192,
-               0.020590465515851974]
+        if target_channel.name == 'AGP':
+            mean = [57.562225341796875, 32.24236297607422, 54.539520263671875, 57.95323944091797, 54.08218002319336]
+            std = [102.41613006591797, 104.47589111328125, 104.00897979736328, 98.84741973876953, 97.49189758300781]
     else:
         logging.info('calculating mean and std...')
         mean, std = calc_mean_and_std(train_mt_df, data_dir, len(train_plates), device)

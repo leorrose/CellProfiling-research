@@ -94,13 +94,7 @@ def parse_args(exp_num=None, num_input_channels=4, target_channel=Channels.AGP, 
 
 def get_paths(exp_num=None, model_type='UNET4TO1', target_channel=Channels.AGP):
     from datetime import datetime
-    ROOT_DIR = '/home/naorko/images_run/{Y}_{m:02}_{d:02}_{H:02}_{M:02}_{S:02}'.format(
-        Y=datetime.now().year,
-        m=datetime.now().month,
-        d=datetime.now().day,
-        H=datetime.now().hour,
-        M=datetime.now().minute,
-        S=datetime.now().second)
+    ROOT_DIR = '/home/naorko/images_run/'
 
     DATA_DIR = f"/storage/users/g-and-n/plates"
     LOG_DIR = f"{ROOT_DIR}/log_dir"
@@ -139,14 +133,7 @@ def setup_determinism(args):
 
 # TODO: Dynamic checkpoint location
 def get_checkpoint(LOG_DIR, model_name, target_channel):
-    # checkpoint = f"{LOG_DIR}/{model_name} on channel{
-    # target_channel.name}/version_1/checkpoints/epoch=18-step=341.ckpt"
-    checkpoint = None
-
-    if 'checkpoint' not in locals():
-        checkpoint = None
-
-    return checkpoint
+    return f"{LOG_DIR}/{model_name} on channel{target_channel.name}/version_0/checkpoints/epoch=19-step=699.ckpt"
 
 
 def get_device():
