@@ -91,7 +91,7 @@ def partitions_idx_to_dfs(mt_df, partitions):
 def create_datasets(plates_split, partitions, data_dir, target_channel, input_size, device,
                     num_input_channels):
     train_plates, test_plates = plates_split
-    mean, std = get_data_stats(partitions['train'], train_plates, data_dir, target_channel, device)
+    mean, std = get_data_stats(partitions['train'], train_plates, data_dir, device)
 
     train_transforms = transforms.Compose([
         transforms.RandomCrop(input_size),
@@ -133,14 +133,13 @@ def print_data_statistics(datasets):
                 len(datasets['test'][plate][key])) + ' images')
 
 
-def get_data_stats(train_mt_df, train_plates, data_dir, target_channel, device):
+def get_data_stats(train_mt_df, train_plates, data_dir, device):
     # TODO: More appropriate way to disable recalculating
     # TODO: Replace with actual numbers from more plates
     train_plates = []
     if not train_plates:
-        if target_channel.name == 'AGP':
-            mean = [57.562225341796875, 32.24236297607422, 54.539520263671875, 57.95323944091797, 54.08218002319336]
-            std = [102.41613006591797, 104.47589111328125, 104.00897979736328, 98.84741973876953, 97.49189758300781]
+        mean = [57.562225341796875, 32.24236297607422, 54.539520263671875, 57.95323944091797, 54.08218002319336]
+        std = [102.41613006591797, 104.47589111328125, 104.00897979736328, 98.84741973876953, 97.49189758300781]
     else:
         logging.info('calculating mean and std...')
         mean, std = calc_mean_and_std(train_mt_df, data_dir, len(train_plates), device)
