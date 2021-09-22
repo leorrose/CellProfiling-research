@@ -114,7 +114,7 @@ def print_exp_description(Model, args, kwargs):
 
 if __name__ == '__main__':
     exp_num = 3  # if None, new experiment directory is created with the next available number
-    description = 'Checking 1to1 prediction on 5'
+    description = 'Checking 4to1 prediction on AGP'
     DEBUG = False
 
     models = [

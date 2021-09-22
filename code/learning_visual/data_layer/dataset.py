@@ -19,7 +19,7 @@ class Channels(Enum):
     AGP = auto()
     DNA = auto()
     ER = auto()
-    MITO = auto()
+    Mito = auto()
     RNA = auto()
 
 
@@ -149,6 +149,9 @@ class CovidDataset(Dataset):
                 self.metadata_file.query(f'Plate == {plate} and Well == "{well}" and Site == {site}')[channel].iat[0]
         else:
             raise 'image_path, need to provide plate-well-site or index'
+
+        if self.root_dir is None or plate is None or filename is None:
+            print(self.root_dir, str(plate), filename)
 
         return os.path.join(self.root_dir, str(plate), filename)
 
