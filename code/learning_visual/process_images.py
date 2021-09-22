@@ -1,4 +1,14 @@
+import torch.nn.functional as F
+
+
 def process_image(model, input, input_size, input_channels):
+    def get_pad_len(l):  # TODO: What if odd padding?
+        return (input_size - (l % input_size)) // 2
+
+    pad_axis2 = get_pad_len(input.shape[2])
+    pad_axis3 = get_pad_len(input.shape[3])
+    input = F.pad(input=input, pad=(pad_axis3, pad_axis3, pad_axis2, pad_axis2))
+
     # based on https://discuss.pytorch.org/t/creating-nonoverlapping-patches-from-3d-data-and-reshape-them-back-to-the-image/51210/6
 
     # divide to patches
@@ -44,14 +54,14 @@ def process_image(model, input, input_size, input_channels):
     # pred_orig = pred_orig.permute(0, 1, 3, 4, 2, 5).contiguous() - important!!
     # pred_orig = pred_orig.permute(0, 1, 3, 4, 2, 5).contiguous()
 
-    pred = pred_orig.view(1, output_c, output_h, output_w).cpu().detach().numpy()[0,:,:,:]
+    pred = pred_orig.view(1, output_c, output_h, output_w).cpu().detach().numpy()[0, :, :, :]
 
     # new_pred = pred_orig.permute(0, 1, 2, 3, 4, 5).contiguous()
     # new_pred = new_pred.view(1, 1, output_h, output_w).cpu().detach().numpy().squeeze()
     # show_input_and_target(input[0, :, :, :].cpu().detach().numpy().squeeze(), new_pred)
 
     # Check for equality
-    assert ((input_orig == input[:, :output_h, :output_w].cpu().numpy().squeeze()).all(),'error in division to patches in inference')
+    assert ((input_orig == input[:, :output_h, :output_w].cpu().numpy().squeeze()).all(),
+            'error in division to patches in inference')
 
-    return pred
-
+    return pred[:, pad_axis2:-pad_axis2, pad_axis3:-pad_axis3]
