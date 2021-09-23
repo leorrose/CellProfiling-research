@@ -94,7 +94,7 @@ def parse_args(exp_num=None, num_input_channels=4, target_channel=Channels.AGP, 
 
 def get_paths(exp_num=None, model_type='UNET4TO1', target_channel=Channels.AGP):
     from datetime import datetime
-    ROOT_DIR = '/home/naorko/images_run/'
+    ROOT_DIR = '/storage/users/g-and-n/visual_models_results/'
 
     DATA_DIR = f"/storage/users/g-and-n/plates"
     LOG_DIR = f"{ROOT_DIR}/log_dir"

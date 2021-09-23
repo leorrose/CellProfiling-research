@@ -113,8 +113,7 @@ def print_exp_description(Model, args, kwargs):
 
 
 if __name__ == '__main__':
-    exp_num = 1  # if None, new experiment directory is created with the next available number
-    description = 'Checking 4to1 prediction on AGP'
+    exp_num = 2  # if None, new experiment directory is created with the next available number
     DEBUG = False
 
     models = [
@@ -123,8 +122,13 @@ if __name__ == '__main__':
         # Model_Config.UNET5TO5
     ]
 
+    # channels_to_predict = [Channels.AGP]  # <-- 159342
+    # channels_to_predict = [Channels.DNA]  # <-- 159343
+    # channels_to_predict = [Channels.ER]  # <-- 159344
+    # channels_to_predict = [Channels.Mito]  # <-- 159345
+    channels_to_predict = [Channels.RNA]  # <-- 159346
+    description = f'Checking 4to1 prediction on {" ".join(c.name for c in channels_to_predict)}'
     print(description)
-    channels_to_predict = list(Channels)
 
     for model in models:
         for target_channel in channels_to_predict:
@@ -132,8 +136,9 @@ if __name__ == '__main__':
             args = config.parse_args(exp_num, target_channel=target_channel, model_type=model.name)
             args.num_input_channels = model.value[2]['n_input_channels']
 
-            args.mode = 'predict'  # 'train'
-            args.plates_split = [[24509, 24633, 24792, 25912], [24294, 24311, 25938, 25985, 25987]]
+            args.mode = 'train'
+            args.plates_split = [[24509, 24562, 24640, 24687, 24752, 25571, 25676, 25945, 26562, 26577, 26765, 24517, 24661, 24774, 25680, 25912, 26640, 26666, 26786, 24321, 24594, 24735, 24792, 25422, 25575, 25664, 25708, 25997, 26576, 26622, 26641, 26674],
+                                 [24294, 24311, 25938, 25985, 25987, 24633]]
 
             args.test_samples_per_plate = None
             args.batch_size = 36
