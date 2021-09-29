@@ -8,10 +8,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
 from data_layer import transforms, dataset
-from data_layer.dataset import CovidDataset
-
-# Maximum value of a pixel
-VMAX = 65535
+from data_layer.dataset import CovidDataset, VMAX
 
 use_cuda = torch.cuda.is_available()
 FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
@@ -136,10 +133,12 @@ def print_data_statistics(datasets):
 def get_data_stats(train_mt_df, train_plates, data_dir, device):
     # TODO: More appropriate way to disable recalculating
     # TODO: Replace with actual numbers from more plates
-    train_plates = []
+    # train_plates = []
     if not train_plates:
-        mean = [57.562225341796875, 32.24236297607422, 54.539520263671875, 57.95323944091797, 54.08218002319336]
-        std = [102.41613006591797, 104.47589111328125, 104.00897979736328, 98.84741973876953, 97.49189758300781]
+        # mean = [57.562225341796875, 32.24236297607422, 54.539520263671875, 57.95323944091797, 54.08218002319336]
+        mean = [44.659000396728516, 24.996856689453125, 43.249263763427734, 45.598453521728516, 43.908058166503906]
+        # std = [102.41613006591797, 104.47589111328125, 104.00897979736328, 98.84741973876953, 97.49189758300781]
+        std = [78.69444274902344, 85.18942260742188, 81.0689697265625, 73.10453796386719, 80.50374603271484]
     else:
         logging.info('calculating mean and std...')
         mean, std = calc_mean_and_std(train_mt_df, data_dir, len(train_plates), device)
@@ -162,7 +161,7 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device):
     for images in train_loader:
         images = images.to(device)
         # TODO: Divide by maximum value was removed
-        batch_mean, batch_std = torch.std_mean(images.float(), dim=(0, 1, 2))
+        batch_mean, batch_std = torch.std_mean(images.float().div(VMAX), dim=(0, 1, 2))
 
         mean += batch_mean
         std += batch_std
