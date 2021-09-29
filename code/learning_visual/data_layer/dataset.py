@@ -14,6 +14,9 @@ FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
 LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
 Tensor = FloatTensor
 
+# Maximum value of a pixel
+VMAX = 65535
+
 
 class Channels(Enum):
     AGP = auto()
@@ -116,7 +119,7 @@ class CovidDataset(Dataset):
         data = np.ndarray(shape=(*self.im_shape, n_channels), dtype=dtype)
 
         for ix, img_path in enumerate(image_paths):
-            data[:, :, ix] = cv2.imread(img_path, flags=cv2.IMREAD_UNCHANGED)
+            data[:, :, ix] = cv2.imread(img_path, flags=cv2.IMREAD_UNCHANGED)  # / VMAX
 
         return data
 

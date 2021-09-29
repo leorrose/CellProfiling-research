@@ -97,7 +97,7 @@ def get_paths(exp_num=None, model_type='UNET4TO1', target_channel=Channels.AGP):
     ROOT_DIR = '/storage/users/g-and-n/visual_models_results/'
 
     DATA_DIR = f"/storage/users/g-and-n/plates"
-    LOG_DIR = f"{ROOT_DIR}/log_dir"
+
     EXP_DIR = f"{ROOT_DIR}/exp_dir"
     # if exp_num is None:
     #     exp_num = get_exp_num(EXP_DIR)
@@ -108,6 +108,8 @@ def get_paths(exp_num=None, model_type='UNET4TO1', target_channel=Channels.AGP):
         make_folder(EXP_DIR)
     METADATA_PATH = os.path.join(DATA_DIR, 'metadata')
     IMAGES_PATH = os.path.join(DATA_DIR, 'images')
+
+    LOG_DIR = f"{EXP_DIR}/log_dir"
 
     return DATA_DIR, METADATA_PATH, LOG_DIR, IMAGES_PATH, EXP_DIR
 
@@ -133,7 +135,19 @@ def setup_determinism(args):
 
 # TODO: Dynamic checkpoint location
 def get_checkpoint(LOG_DIR, model_name, target_channel):
-    return f"{LOG_DIR}/{model_name} on channel{target_channel.name}/version_0/checkpoints/epoch=19-step=699.ckpt"
+    base = f'{LOG_DIR}/{model_name} on channel{target_channel.name}/version_6/checkpoints/'
+    if target_channel == Channels.AGP:
+        return base + 'epoch=12-step=3834.ckpt'
+    elif target_channel == Channels.DNA:
+        return base + 'epoch=19-step=5239.ckpt'
+    elif target_channel == Channels.ER:
+        return base + 'epoch=19-step=5239.ckpt'
+    elif target_channel == Channels.Mito:
+        return base + 'epoch=19-step=5239.ckpt'
+    elif target_channel == Channels.RNA:
+        return base + 'epoch=18-step=4977.ckpt'
+    else:
+        return None
 
 
 def get_device():
