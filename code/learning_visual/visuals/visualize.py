@@ -3,6 +3,8 @@ from math import floor, ceil
 
 from matplotlib import pyplot as plt
 
+CMAP = 'gray'  # 'viridis'
+
 
 def show_input_and_target(input, target=None, pred=None, title='', save_dir=None):
     input_c = input.shape[0]
@@ -15,13 +17,13 @@ def show_input_and_target(input, target=None, pred=None, title='', save_dir=None
 
     fig, ax = plt.subplots(num_rows, num_cols)
     for c in range(input_c):
-        ax[floor(c / num_cols), c % num_cols].imshow(input[c, :, :])
+        ax[floor(c / num_cols), c % num_cols].imshow(input[c, :, :], cmap=CMAP)
         ax[floor(c / num_cols), c % num_cols].set_title('Input channel ' + str(c))
 
     if target is not None:
         for c in range(target_c):
             curr_fig = input_c + c
-            ax[floor(curr_fig / num_cols), curr_fig % num_cols].imshow(target[c, :, :])
+            ax[floor(curr_fig / num_cols), curr_fig % num_cols].imshow(target[c, :, :], cmap=CMAP)
             ax[floor(curr_fig / num_cols), curr_fig % num_cols].set_title('Target' + str(c))
             # pos1 =ax[1,input_c % num_cols].imshow(target[:, :])
             # ax[1, input_c % num_cols].set_title('Target')
@@ -29,7 +31,7 @@ def show_input_and_target(input, target=None, pred=None, title='', save_dir=None
     if pred is not None:
         for c in range(pred_c):
             curr_fig = input_c + target_c + c
-            ax[floor(curr_fig / num_cols), curr_fig % num_cols].imshow(pred[c, :, :])
+            ax[floor(curr_fig / num_cols), curr_fig % num_cols].imshow(pred[c, :, :], cmap=CMAP)
             ax[floor(curr_fig / num_cols), curr_fig % num_cols].set_title('Prediction' + str(c))
 
         # pos2 = ax[1,(input_c+1) % num_cols].imshow(pred[:, :])
