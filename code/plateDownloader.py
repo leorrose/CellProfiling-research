@@ -3,6 +3,7 @@
 # Utils
 from sys import argv
 from os import path, scandir, makedirs, remove, listdir
+from shutil import rmtree
 from tqdm import tqdm
 
 # Selector
@@ -333,10 +334,8 @@ def merge_plate(destinations, directory, plate_folder):
 
         df_imgs.to_csv(mt_output)
         del df_well
-    
-    remove(well_file)
-    remove(sql_file)
-    remove(folder_path)
+
+    rmtree(folder_path)
 
 
 # %% Main function:
