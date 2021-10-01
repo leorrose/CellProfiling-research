@@ -121,7 +121,7 @@ def setup_logging(args):
     #     handlers.append(logging.FileHandler(args.save + '.log', mode='w'))
     # if args.mode == 'predict':
     #     handlers.append(logging.FileHandler(args.load + '.output.log', mode='w'))
-    logging.basicConfig(level=logging.DEBUG, format=head, style='{', handlers=handlers)
+    logging.basicConfig(level=logging.INFO, format=head, style='{', handlers=handlers)
     logging.info('Start with arguments {}'.format(args))
 
 
@@ -135,19 +135,17 @@ def setup_determinism(args):
 
 # TODO: Dynamic checkpoint location
 def get_checkpoint(LOG_DIR, model_name, target_channel):
-    base = f'{LOG_DIR}/{model_name} on channel{target_channel.name}/version_6/checkpoints/'
-    if target_channel == Channels.AGP:
-        return base + 'epoch=12-step=3834.ckpt'
-    elif target_channel == Channels.DNA:
-        return base + 'epoch=19-step=5239.ckpt'
-    elif target_channel == Channels.ER:
-        return base + 'epoch=19-step=5239.ckpt'
-    elif target_channel == Channels.Mito:
-        return base + 'epoch=19-step=5239.ckpt'
-    elif target_channel == Channels.RNA:
-        return base + 'epoch=18-step=4977.ckpt'
-    else:
-        return None
+    base = f'{LOG_DIR}/{model_name} on channel{target_channel.name}/'
+    ver_dir = os.listdir(base)
+    if ver_dir:
+        ver_dir = ver_dir[0]
+        chk_dir = os.path.join(base, ver_dir, 'checkpoints')
+        chk_file = os.listdir(chk_dir)
+        if chk_file:
+            chk_file = chk_file[0]
+            return os.path.join(chk_dir, chk_file)
+
+    return None
 
 
 def get_device():

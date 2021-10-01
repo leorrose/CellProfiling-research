@@ -9,8 +9,8 @@ from tqdm import tqdm
 
 from configuration import config
 from configuration.model_config import Model_Config
-from data_layer.prepare_data import load_data
 from data_layer.dataset import Channels
+from data_layer.prepare_data import load_data
 from process_images import process_image
 from util.files_operations import save_to_pickle, is_file_exist
 from visuals.visualize import show_input_and_target
@@ -37,8 +37,6 @@ def test(model, data_loader, input_size, input_channels=4, title='', save_dir=''
     # results = {}
     pccs = []
     for i, (input, target, ind) in tqdm(enumerate(data_loader), total=len(data_loader)):
-
-        # deformation to patches and reconstruction based on https://discuss.pytorch.org/t/creating-nonoverlapping-patches-from-3d-data-and-reshape-them-back-to-the-image/51210/6
         rec = data_loader.dataset.metadata_file.iloc[ind].drop([c.name for c in Channels], axis=1)
         pred = process_image(model, input, input_size, input_channels)
         pcc, p_value = scipy.stats.pearsonr(pred.flatten(), target.cpu().detach().numpy().flatten())
@@ -47,6 +45,7 @@ def test(model, data_loader, input_size, input_channels=4, title='', save_dir=''
         # pccs.append(pcc)
 
         if show_images and start == 0:
+            # TODO: Reverse transform
             if input_channels == 5:
                 show_input_and_target(input.cpu().detach().numpy()[0, :, :, :],
                                       pred=pred, title=title, save_dir=save_dir)
@@ -82,7 +81,6 @@ def main(Model, args, kwargs={}):
     logging.info('Preparing data finished.')
 
     model = Model.model_class(**Model.params)
-    args.checkpoint = config.get_checkpoint(args.log_dir, Model.name, args.target_channel)
     if args.mode == 'predict' and args.checkpoint is not None:
         logging.info('loading model from file...')
         model = model.load_from_checkpoint(args.checkpoint)
@@ -164,8 +162,9 @@ if __name__ == '__main__':
                 [24294, 24311, 25938, 25985, 25987, 24633]]
 
             args.test_samples_per_plate = None
-            args.batch_size = 36
-            args.input_size = 128
+            args.batch_size = 32
+            args.input_size = model.params['input_size']
+            args.checkpoint = config.get_checkpoint(args.log_dir, model.name, args.target_channel)
 
             if DEBUG:
                 args.test_samples_per_plate = 5
