@@ -16,13 +16,12 @@ class Unet(pl.LightningModule):
         # self.params = params
         if isinstance(kwargs, dict):
             hparams = Namespace(**kwargs)
-        # TODO: cant assigning ask alon
-        # self.hparams = hparams
+
         self.save_hyperparameters(kwargs)
         self.n_channels = hparams.n_input_channels
         self.n_classes = hparams.n_classes
-        self.h = hparams.input_size
-        self.w = hparams.input_size
+        self.h = hparams.input_size[0]
+        self.w = hparams.input_size[1]
         self.minimize_net_factor = hparams.minimize_net_factor
         self.bilinear = True
 
@@ -62,7 +61,7 @@ class Unet(pl.LightningModule):
 
                 x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
                                 diffY // 2, diffY - diffY // 2])
-                x = torch.cat([x2, x1], dim=1)  ## why 1?
+                x = torch.cat([x2, x1], dim=1)
                 return self.conv(x)
 
         first_layer_depth = int(64 / self.minimize_net_factor)

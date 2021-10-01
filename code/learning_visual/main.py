@@ -96,6 +96,11 @@ def main(Model, args, kwargs={}):
         trainer.fit(model, dataloaders['train'], dataloaders['val'])
         logging.info('training model finished.')
 
+    # # Check test process
+    # inp, target, idx = dataloaders['test']['24294']['mock'].dataset.__getitem__(0)
+    # pred = process_image(model, inp.unsqueeze(0), args.input_size, args.num_input_channels)
+    # pcc, p_value = scipy.stats.pearsonr(pred.flatten(), target.cpu().detach().numpy().flatten())
+
     logging.info('testing model...')
     res = test_by_partition(model, dataloaders['test'], args.input_size, args.num_input_channels, args.exp_dir)
     logging.info('testing model finished...')
@@ -121,7 +126,18 @@ def print_exp_description(Model, args, kwargs):
 
 
 if __name__ == '__main__':
-    exp_num = 2  # if None, new experiment directory is created with the next available number
+    # 2 with old mean & std
+    # 3 with new mean & std
+    # 4 with div (159949-159953)
+    # 5 no div, changed input to 256 (159954-159958)
+    # 6 load images with div by 65535, no mean & std transform (160065-160069)
+    # 7 like 6 with output sigmoid (160086, 160077-160080)
+    # 8 with div, more plates and epochs (160145-160149)
+    # --- Unet scale changed to 1
+    # 9 with div fix(255 because of ToTensor)
+    # 10 520x696 input
+    # 11 10 with lr 1.5e-3
+    exp_num = 11  # if None, new experiment directory is created with the next available number
     DEBUG = False
 
     models = [

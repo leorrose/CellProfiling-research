@@ -2,17 +2,21 @@ import torch.nn.functional as F
 
 
 def process_image(model, input, input_size, input_channels):
-    def get_pad_len(l):  # TODO: What if odd padding?
-        return (input_size - (l % input_size)) // 2
+    # divide to patches
+    h, w = input_size
 
-    pad_axis2 = get_pad_len(input.shape[2])
-    pad_axis3 = get_pad_len(input.shape[3])
+    def get_pad_len(l, patch_size):  # TODO: What if odd padding?
+        pad = l % patch_size
+        if pad:
+            return (patch_size - pad) // 2
+
+        return 0
+
+    pad_axis2 = get_pad_len(input.shape[2], h)
+    pad_axis3 = get_pad_len(input.shape[3], w)
     input = F.pad(input=input, pad=(pad_axis3, pad_axis3, pad_axis2, pad_axis2))
 
     # based on https://discuss.pytorch.org/t/creating-nonoverlapping-patches-from-3d-data-and-reshape-them-back-to-the-image/51210/6
-
-    # divide to patches
-    h, w = input_size, input_size
 
     if input_channels == 5:
         input_c, output_c = 5, 5
@@ -21,7 +25,7 @@ def process_image(model, input, input_size, input_channels):
     else:
         input_c, output_c = 4, 1
 
-    input_patches = input.unfold(2, h, w).unfold(3, h, w)  # to patches
+    input_patches = input.unfold(2, h, w).unfold(3, w, h)  # to patches
     unfold_shape = list(input_patches.shape)
     input_patches = input_patches.permute(0, 3, 2, 1, 4, 5).contiguous().view(-1, input_c, h, w)  # reshape for model
 
@@ -64,4 +68,7 @@ def process_image(model, input, input_size, input_channels):
     assert ((input_orig == input[:, :output_h, :output_w].cpu().numpy().squeeze()).all(),
             'error in division to patches in inference')
 
-    return pred[:, pad_axis2:-pad_axis2, pad_axis3:-pad_axis3]
+    s_axis2 = slice(pad_axis2, -pad_axis2) if pad_axis2 else slice(None)
+    s_axis3 = slice(pad_axis3, -pad_axis3) if pad_axis3 else slice(None)
+
+    return pred[:, s_axis2, s_axis3]
