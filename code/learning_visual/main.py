@@ -111,6 +111,16 @@ def print_exp_description(Model, args, kwargs):
         description += ', ' + arg + ': ' + str(kwargs[arg])
     print(description)
 
+    print('Arguments:')
+    col = 3
+    i = 0
+    for k, v in args.__dict__.items():
+        print(f'\t{k}: {v}', end='')
+        i = (i + 1) % col
+        if not i:
+            print()
+    print()
+
 
 if __name__ == '__main__':
     exp_num = 2  # if None, new experiment directory is created with the next available number
@@ -122,13 +132,15 @@ if __name__ == '__main__':
         # Model_Config.UNET5TO5
     ]
 
-    # channels_to_predict = [Channels.AGP]  # <-- 159342
-    # channels_to_predict = [Channels.DNA]  # <-- 159343
-    # channels_to_predict = [Channels.ER]  # <-- 159344
-    # channels_to_predict = [Channels.Mito]  # <-- 159345
-    channels_to_predict = [Channels.RNA]  # <-- 159346
-    description = f'Checking 4to1 prediction on {" ".join(c.name for c in channels_to_predict)}'
-    print(description)
+    import sys
+
+    chan_id = int(sys.argv[1]) - 1
+
+    # channels_to_predict = [Channels.AGP]
+    # channels_to_predict = [Channels.DNA]
+    # channels_to_predict = [Channels.ER]
+    # channels_to_predict = [Channels.Mito]
+    channels_to_predict = [list(Channels)[chan_id]]
 
     for model in models:
         for target_channel in channels_to_predict:
@@ -137,8 +149,19 @@ if __name__ == '__main__':
             args.num_input_channels = model.value[2]['n_input_channels']
 
             args.mode = 'train'
-            args.plates_split = [[24509, 24562, 24640, 24687, 24752, 25571, 25676, 25945, 26562, 26577, 26765, 24517, 24661, 24774, 25680, 25912, 26640, 26666, 26786, 24321, 24594, 24735, 24792, 25422, 25575, 25664, 25708, 25997, 26576, 26622, 26641, 26674],
-                                 [24294, 24311, 25938, 25985, 25987, 24633]]
+            args.mode = 'predict'
+            args.plates_split = [
+                [
+                    24357, 24585, 24623, 24661, 24735, 24792, 25392, 25569, 25588, 25683, 25726, 25912, 25955, 25997,
+                    26207, 26576, 26640, 26674, 26745, 24300, 24509, 24594, 24631, 24683, 24752, 24796, 25406, 25570,
+                    25599, 25686, 25732, 25918, 26115, 26247, 26577, 26641, 26677, 26765, 24303, 24517, 24609, 24685,
+                    24756, 25372, 25422, 25571, 25663, 25692, 25742, 25937, 26124, 26271, 26600, 26662, 26683, 26771,
+                    24309, 24523, 24611, 24634, 24687, 24759, 25374, 25432, 25573, 25664, 25695, 25854, 25989, 26133,
+                    26562, 26611, 26664, 26685, 26786, 24525, 24617, 24640, 24688, 24773, 25380, 25492, 25575, 25676,
+                    # 25708, 25857, 25944, 25991, 26174, 26563, 26622, 26666, 26695, 26794, 24321, 24562, 24619, 24654,
+                    # 24734, 24774, 25382, 25566, 25579, 25680, 25725, 25862, 25945, 25994, 26204, 26564, 26623, 26672,
+                    26724, 26795],
+                [24294, 24311, 25938, 25985, 25987, 24633]]
 
             args.test_samples_per_plate = None
             args.batch_size = 36

@@ -67,7 +67,7 @@ def plate_selector(plate_amount, plate_numbers, extract_folder, csv_folder, mt_f
         return set()
 
     csv_plate_files, mt_plate_files = [get_raw_plate_files_names(fld) for fld in [csv_folder, mt_folder]]
-    plate_files = csv_plate_files.intersection(mt_plate_files)
+    plate_files = csv_plate_files & mt_plate_files
     dont_download = {plate for plate in plate_list if plate in plate_files}
     plate_list = {plate for plate in plate_list if plate not in plate_files}
     if len(dont_download) > 0:

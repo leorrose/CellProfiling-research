@@ -6,7 +6,7 @@
 ##################
 
 #SBATCH --partition main			### specify partition name where to run a job. debug: 2 hours limit; short: 7 days limit; gtx1080: 7 days
-#SBATCH --time 5-12:00:00			### limit the time of job running, partition limit can override this. Format: D-H:MM:SS
+#SBATCH --time 7-00:00:00			### limit the time of job running, partition limit can override this. Format: D-H:MM:SS
 #SBATCH --job-name CellProfile	### name of the job
 #SBATCH --output job_outputs/job-tabular-downloader-%J.out			### output log for running job - %J for job number
 #SBATCH --mail-user=naorko@post.bgu.ac.il	### user email for sending job status
@@ -23,8 +23,9 @@ echo -e "SLURM_JOB_NODELIST:\t" $SLURM_JOB_NODELIST "\n\n"
 ### Start you code below ####
 module load anaconda				### load anaconda module (must present when working with conda environments)
 source activate tf-env				### activating environment, environment must be configured before running the job
-python $CELL_HOME/code/plateDownloader.py $CELL_STORAGE/plates -l 25569 24683 26271 26600 25579 24756 25392 25695 25432 25854
-##26672 26174 25566 26745 25683 26677 25725 25918 26115 26124 <-- 846966
-##25989 24309 25380 26207 24609 25726 24796 25570 26685 25991 <-- 846967
-##25588 25944 24523 24734 25382 26795 24759 24357 25406 25692 <-- 846968
-##25569 24683 26271 26600 25579 24756 25392 25695 25432 25854 <-- 846969
+python $CELL_HOME/code/plateDownloader.py $CELL_STORAGE/plates -l 24684 25690 25704 26166 24313 24306 25983 24278 24732 24563
+##26669 26588 26601 25966 24655 26739 26772 26126 24304 24566 <-- 847100
+##24602 24793 24635 26702 24772 25935 24352 24667 24646 24277
+##24604 25939 25592 25915 25678 26569 26668 25856 24564 25568
+##24605 25848 25925 25605 25679 26572 26081 24657 25403 24648
+##24684 25690 25704 26166 24313 24306 25983 24278 24732 24563 <-- 847104

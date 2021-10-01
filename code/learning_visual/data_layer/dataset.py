@@ -119,7 +119,7 @@ class CovidDataset(Dataset):
         data = np.ndarray(shape=(*self.im_shape, n_channels), dtype=dtype)
 
         for ix, img_path in enumerate(image_paths):
-            data[:, :, ix] = cv2.imread(img_path, flags=cv2.IMREAD_UNCHANGED)  # / VMAX
+            data[:, :, ix] = cv2.imread(img_path, flags=cv2.IMREAD_UNCHANGED)
 
         return data
 

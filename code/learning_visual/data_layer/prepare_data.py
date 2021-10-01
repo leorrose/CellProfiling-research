@@ -135,10 +135,8 @@ def get_data_stats(train_mt_df, train_plates, data_dir, device):
     # TODO: Replace with actual numbers from more plates
     # train_plates = []
     if not train_plates:
-        # mean = [57.562225341796875, 32.24236297607422, 54.539520263671875, 57.95323944091797, 54.08218002319336]
-        mean = [44.659000396728516, 24.996856689453125, 43.249263763427734, 45.598453521728516, 43.908058166503906]
-        # std = [102.41613006591797, 104.47589111328125, 104.00897979736328, 98.84741973876953, 97.49189758300781]
-        std = [78.69444274902344, 85.18942260742188, 81.0689697265625, 73.10453796386719, 80.50374603271484]
+        mean = [0.1825772225856781, 0.10411982983350754, 0.1784633994102478, 0.18292243778705597, 0.17895281314849854]
+        std = [0.32412955164909363, 0.35307225584983826, 0.3210125267505646, 0.2937472462654114, 0.32364943623542786]
     else:
         logging.info('calculating mean and std...')
         mean, std = calc_mean_and_std(train_mt_df, data_dir, len(train_plates), device)
@@ -161,7 +159,7 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device):
     for images in train_loader:
         images = images.to(device)
         # TODO: Divide by maximum value was removed
-        batch_mean, batch_std = torch.std_mean(images.float().div(VMAX), dim=(0, 1, 2))
+        batch_mean, batch_std = torch.std_mean(images.float().div(255), dim=(0, 1, 2))
 
         mean += batch_mean
         std += batch_std
