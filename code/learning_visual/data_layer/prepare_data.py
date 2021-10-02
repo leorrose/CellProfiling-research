@@ -133,10 +133,10 @@ def print_data_statistics(datasets):
 def get_data_stats(train_mt_df, train_plates, data_dir, device):
     # TODO: More appropriate way to disable recalculating
     # TODO: Replace with actual numbers from more plates
-    # train_plates = []
+    train_plates = []
     if not train_plates:
-        mean = [0.1825772225856781, 0.10411982983350754, 0.1784633994102478, 0.18292243778705597, 0.17895281314849854]
-        std = [0.32412955164909363, 0.35307225584983826, 0.3210125267505646, 0.2937472462654114, 0.32364943623542786]
+        mean = [0.297140896320343, 0.1698523908853531, 0.2917635142803192, 0.2994919419288635, 0.2939795255661011]
+        std = [0.5286955237388611, 0.5789692997932434, 0.5276283025741577, 0.48252999782562256, 0.5313940644264221]
     else:
         logging.info('calculating mean and std...')
         mean, std = calc_mean_and_std(train_mt_df, data_dir, len(train_plates), device)
@@ -149,7 +149,7 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device):
                                       for_data_statistics_calc=True)
     batch_size = int(len(train_data) / num_batches)
     # TODO: Why this size?
-    batch_size = 512
+    # batch_size = 512
     train_loader = DataLoader(train_data, batch_size=batch_size)
     num_channels = len(dataset.Channels)
 

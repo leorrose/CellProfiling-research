@@ -28,11 +28,11 @@ LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
 Tensor = FloatTensor
 
 
-def parse_args(exp_num=None, num_input_channels=4, target_channel=Channels.AGP, model_type='UNET4TO1'):
+def parse_args(model, target_channel, exp_num=None):
     parser = ArgumentParser()
     parser.add_argument('-m', '--mode', type=str, default='train', choices=('train', 'predict'))
 
-    DATA_DIR, METADATA_PATH, LOG_DIR, IMAGES_PATH, EXP_DIR = get_paths(exp_num, model_type, target_channel)
+    DATA_DIR, METADATA_PATH, LOG_DIR, IMAGES_PATH, EXP_DIR = get_paths(exp_num, model.name, target_channel)
     parser.add_argument('--data_path', type=Path, default=DATA_DIR,
                         help='path to the data root. It assumes format like in Kaggle with unpacked archives')
     parser.add_argument('--metadata_path', type=Path, default=METADATA_PATH,
@@ -63,22 +63,21 @@ def parse_args(exp_num=None, num_input_channels=4, target_channel=Channels.AGP, 
 
     parser.add_argument('--target_channel', type=str, default=target_channel.name, choices=('AGP', 'DNA', 'ER', 'Mito', 'RNA'),
                         help='the channel predicted by the network')
-    parser.add_argument('--num_input_channels', type=int, default=num_input_channels, choices=(1, 4, 5),
+    parser.add_argument('--num_input_channels', type=int, default=model.params['n_input_channels'], choices=(1, 4, 5),
                         help='defines what autoencoder is trained (4to1, 1to1, 5to5)')
-    parser.add_argument('--input_size', type=int, default=128,
+    parser.add_argument('--input_size', type=tuple, default=model.params['input_size'],
                         help='width and hight input into the network')
 
     parser.add_argument('--batch_size', type=int, default=36)
-    parser.add_argument('--epochs', type=int, default=20)
-    parser.add_argument('--lr', type=float, default=1.5e-4)
-    # parser.add_argument('-minimize_net_factor', type=int, default=4,
-    #                     help='reduces the network number of convolution maps by a factor')
+    parser.add_argument('--epochs', type=int, default=model.params['epochs'])
+    parser.add_argument('--lr', type=float, default=model.params['lr'])
+    parser.add_argument('--minimize_net_factor', type=int, default=model.params['minimize_net_factor'],
+                        help='reduces the network number of convolution maps by a factor')
 
     parser.add_argument('--checkpoint', type=str,
                         default='',
                         help='path to load existing model from')
 
-    # args = parser.parse_known_args()
     args = parser.parse_known_args()[0]
 
     if args.seed is None:
@@ -98,7 +97,7 @@ def get_paths(exp_num=None, model_type='UNET4TO1', target_channel=Channels.AGP):
 
     DATA_DIR = f"/storage/users/g-and-n/plates"
 
-    EXP_DIR = f"{ROOT_DIR}/exp_dir"
+    EXP_DIR = f"{ROOT_DIR}"
     # if exp_num is None:
     #     exp_num = get_exp_num(EXP_DIR)
     EXP_DIR = os.path.join(EXP_DIR, str(exp_num), model_type, "channel " + target_channel.name)
@@ -109,7 +108,7 @@ def get_paths(exp_num=None, model_type='UNET4TO1', target_channel=Channels.AGP):
     METADATA_PATH = os.path.join(DATA_DIR, 'metadata')
     IMAGES_PATH = os.path.join(DATA_DIR, 'images')
 
-    LOG_DIR = f"{EXP_DIR}/log_dir"
+    LOG_DIR = f"{EXP_DIR}"
 
     return DATA_DIR, METADATA_PATH, LOG_DIR, IMAGES_PATH, EXP_DIR
 
@@ -133,17 +132,19 @@ def setup_determinism(args):
     random.seed(args.seed)
 
 
-# TODO: Dynamic checkpoint location
 def get_checkpoint(LOG_DIR, model_name, target_channel):
-    base = f'{LOG_DIR}/{model_name} on channel{target_channel.name}/'
-    ver_dir = os.listdir(base)
-    if ver_dir:
-        ver_dir = ver_dir[0]
-        chk_dir = os.path.join(base, ver_dir, 'checkpoints')
-        chk_file = os.listdir(chk_dir)
-        if chk_file:
-            chk_file = chk_file[0]
-            return os.path.join(chk_dir, chk_file)
+    base = f'{LOG_DIR}/log_dir/'
+    try:
+        ver_dir = os.listdir(base)
+        if ver_dir:
+            ver_dir = ver_dir[0]
+            chk_dir = os.path.join(base, ver_dir, 'checkpoints')
+            chk_file = os.listdir(chk_dir)
+            if chk_file:
+                chk_file = chk_file[0]
+                return os.path.join(chk_dir, chk_file)
+    except FileNotFoundError:
+        return None
 
     return None
 

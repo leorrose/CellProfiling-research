@@ -1,8 +1,7 @@
-import numpy as np
-from PIL import Image
 import random
 
-import torch
+import numpy as np
+from PIL import Image
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
 
@@ -67,12 +66,12 @@ class RandomCrop(object):
         # image = pad_if_smaller(image, self.size)
         # target = pad_if_smaller(target, self.size, fill=255)
         channels = image.shape[2]
-        cropped_image = np.ndarray(shape=(self.size, self.size, channels), dtype=image.dtype)
-        crop_params = T.RandomCrop.get_params(Image.fromarray(image[:,:,0]), (self.size, self.size))
+        cropped_image = np.ndarray(shape=(self.size[0], self.size[1], channels), dtype=image.dtype)
+        crop_params = T.RandomCrop.get_params(Image.fromarray(image[:, :, 0]), (self.size[0], self.size[1]))
         for c in range(channels):
             image_channel = Image.fromarray(image[:, :, c])
             cropped_image_channel = F.crop(image_channel, *crop_params)
-            cropped_image[:,:,c] = cropped_image_channel
+            cropped_image[:, :, c] = cropped_image_channel
         # target = F.crop(target, *crop_params)
 
         return cropped_image

@@ -3,11 +3,9 @@ from enum import Enum
 from model_layer.UNET import Unet
 from model_layer.UNETnoBypass import UnetnoBypass
 
-input_h = 696
-input_w = 520
-lr = 0.0015  # 1.5e-4
-epochs = 25
-minimize_net_factor = 1
+default_exp = (128, 128, 1.5e-4, 25, 1)
+exp_values = default_exp
+input_h, input_w, lr, epochs, minimize_net_factor = exp_values
 
 
 class Model_Config(Enum):
@@ -28,3 +26,8 @@ class Model_Config(Enum):
         self.model_name = model_name
         self.model_class = model_class
         self.params = params
+
+    def update_custom_params(self, params):
+        for k in params.keys():
+            if k in self.params:
+                self.params[k] = params[k]
