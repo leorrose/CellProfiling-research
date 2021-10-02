@@ -1,8 +1,8 @@
 from itertools import cycle
 from multiprocessing import Pool
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 from hit_finding.constants import *
@@ -129,14 +129,14 @@ def extract_score(plate_csv, by_well=True, by_channel=True, abs_zscore=True, wel
 
     return data
 
+
 def extract_dist_score(plate_csv, well_type='treated', **kwargs):
     df = load_plate_csv(plate_csv)
     df = df.groupby(by=['Plate', LABEL_FIELD, 'Metadata_broad_sample', 'Image_Metadata_Well']).apply(
-                lambda g: g.mean())
+        lambda g: g.mean())
 
     def calculate_distance_from(v):
         return lambda x: np.linalg.norm(x - v)
-
 
     _, _, channels = list_columns(df)
     all_cols = [col for ch_cols in channels.values() for col in ch_cols]
@@ -151,15 +151,16 @@ def extract_dist_score(plate_csv, well_type='treated', **kwargs):
         dist_func = calculate_distance_from(mck_profile)
         trt_dist = df_trt.apply(dist_func, axis=1)
         del df_trt
-        
+
         trt_dist.name = channel
 
         scores.append(trt_dist)
 
-    del df    
+    del df
 
     scores_df = pd.concat(scores, axis=1)
     return scores_df
+
 
 def extract_dist_score_norm_before(plate_csv, well_type='treated', **kwargs):
     df = load_pure_zscores(plate_csv, kwargs['raw'], kwargs['inter_channel'])
@@ -167,7 +168,6 @@ def extract_dist_score_norm_before(plate_csv, well_type='treated', **kwargs):
     def calculate_distance_from(v):
         return lambda x: np.linalg.norm(x - v)
 
-
     _, _, channels = list_columns(df)
     all_cols = [col for ch_cols in channels.values() for col in ch_cols]
     channels['ALL'] = all_cols
@@ -181,24 +181,24 @@ def extract_dist_score_norm_before(plate_csv, well_type='treated', **kwargs):
         dist_func = calculate_distance_from(mck_profile)
         trt_dist = df_trt.apply(dist_func, axis=1)
         del df_trt
-        
+
         trt_dist.name = channel
 
         scores.append(trt_dist)
 
-    del df    
+    del df
 
     scores_df = pd.concat(scores, axis=1)
     return scores_df
 
+
 def extract_dist_score_norm_after(plate_csv, well_type='treated', **kwargs):
     df = load_plate_csv(plate_csv)
     df = df.groupby(by=['Plate', LABEL_FIELD, 'Metadata_broad_sample', 'Image_Metadata_Well']).apply(
-                lambda g: g.mean())
+        lambda g: g.mean())
 
     def calculate_distance_from(v):
         return lambda x: np.linalg.norm(x - v)
-
 
     _, _, channels = list_columns(df)
     all_cols = [col for ch_cols in channels.values() for col in ch_cols]
@@ -215,19 +215,19 @@ def extract_dist_score_norm_after(plate_csv, well_type='treated', **kwargs):
         del df_mck
         trt_dist = df_trt.apply(dist_func, axis=1)
         del df_trt
-        
+
         scaler = StandardScaler()
-        scaler.fit(mck_dist.to_numpy().reshape(-1,1))
+        scaler.fit(mck_dist.to_numpy().reshape(-1, 1))
         del mck_dist
 
-        cur_scores = pd.Series(scaler.transform(trt_dist.to_numpy().reshape(-1,1)).reshape(-1),
+        cur_scores = pd.Series(scaler.transform(trt_dist.to_numpy().reshape(-1, 1)).reshape(-1),
                                index=trt_dist.index,
                                name=channel)
         del trt_dist
 
         scores.append(cur_scores)
 
-    del df    
+    del df
 
     scores_df = pd.concat(scores, axis=1)
     return scores_df

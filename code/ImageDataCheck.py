@@ -1,4 +1,6 @@
 import os
+from multiprocessing import Pool
+
 import pandas as pd
 from tqdm import tqdm
 
@@ -16,24 +18,29 @@ if mt_plates - both_plates:
 if img_plates - both_plates:
     print(f'There are no metadata for {",".join(img_plates - both_plates)}')
 
-bad_plates = []
-for p in tqdm(both_plates):
+
+def check_plate(p):
     mt_path = os.path.join(mt_fld, f'{p}.csv')
     mt_df = pd.read_csv(mt_path)
 
-    bad_plate = False
     for i, row in mt_df.iterrows():
         for c in ['AGP', 'DNA', 'ER', 'Mito', 'RNA']:
             img_name = row.get(c)
             img_path = os.path.join(img_fld, p, img_name)
             if not os.path.exists(img_path):
-                # print(f'\tMissing {img_name} for channel {c}')
-                bad_plate = True
-                bad_plates.append(p)
-                break
+                return p
 
-        if bad_plate:
-            break
+    return None
+
+
+p = Pool(5)
+
+bad_plates = p.map(check_plate, both_plates)
+p.close()
+p.join()
+
+bad_plates = [p for p in bad_plates if p]
+
 print()
 if bad_plates:
     print(f'Bad Plates: {bad_plates}')
