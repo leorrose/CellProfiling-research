@@ -22,7 +22,13 @@ def download_plate(plate):
 
 
 if __name__ == '__main__':
-    plate_numbers = sys.argv[1:]
+    if sys.argv[1] == '-i':
+        i = int(sys.argv[2])
+        with open(r'/storage/users/g-and-n/plates_to_download.txt', 'r') as f:
+            plates = [p.strip() for p in f.readlines()]
+            plate_numbers = plates[i].split(' ')
+    else:
+        plate_numbers = sys.argv[1:]
 
     # p = Pool(8)
     # p.map(download_plate, plate_numbers)

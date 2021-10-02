@@ -43,6 +43,6 @@ bad_plates = [p for p in bad_plates if p]
 
 print()
 if bad_plates:
-    print(f'Bad Plates: {bad_plates}')
+    print(f'Bad Plates: {" ".join(bad_plates)}')
 else:
     print('There are no bad plates')

@@ -368,6 +368,7 @@ if __name__ == '__main__':
         print("Usage: plateDownloader.py [working_path] -n [plate_amount]")
         print("Usage: plateDownloader.py [working_path] -l [plate_number1] [plate_number2] ...")
         print("Usage: plateDownloader.py [working_path] -n [plate_amount] -l [plate_number1] [plate_number2] ...")
+        print("Usage: plateDownloader.py [working_path] -i [line_index_in_file]")
         exit(-1)
 
     makedirs(argv[1], exist_ok=True)
@@ -390,5 +391,11 @@ if __name__ == '__main__':
             exit(-1)
         else:
             plate_numbers = argv[i + 1:]
+
+    if argv[i] == '-i':
+        i = int(argv[i+1])
+        with open(r'/storage/users/g-and-n/plates_to_download.txt', 'r') as f:
+            plates = [p.strip() for p in f.readlines()]
+            plate_numbers = plates[i].split(' ')
 
     main(argv[1], plate_amount, plate_numbers)
