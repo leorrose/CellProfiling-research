@@ -16,7 +16,7 @@
 #SBATCH --mem=32G				### amount of RAM memory
 #SBATCH --cpus-per-task=4			### number of CPU cores
 
-#SBATCH --array=0-33%10
+#SBATCH --array=0-8
 
 ### Print some data to output file ###
 echo `date`echo -e "\nSLURM_JOBID:\t\t" $SLURM_JOBID

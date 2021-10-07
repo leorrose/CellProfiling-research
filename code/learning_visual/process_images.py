@@ -25,7 +25,7 @@ def process_image(model, input, input_size, input_channels):
     else:
         input_c, output_c = 4, 1
 
-    input_patches = input.unfold(2, h, w).unfold(3, w, h)  # to patches
+    input_patches = input.unfold(2, h, h).unfold(3, w, w)  # to patches
     unfold_shape = list(input_patches.shape)
     input_patches = input_patches.permute(0, 3, 2, 1, 4, 5).contiguous().view(-1, input_c, h, w)  # reshape for model
 

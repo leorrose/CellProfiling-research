@@ -13,10 +13,10 @@ img_plates = set(os.listdir(img_fld))
 both_plates = mt_plates & img_plates
 
 if mt_plates - both_plates:
-    print(f'There are no images for {",".join(mt_plates - both_plates)}')
+    print(f'There are no images for {" ".join(mt_plates - both_plates)}')
 
 if img_plates - both_plates:
-    print(f'There are no metadata for {",".join(img_plates - both_plates)}')
+    print(f'There are no metadata for {" ".join(img_plates - both_plates)}')
 
 
 def check_plate(p):

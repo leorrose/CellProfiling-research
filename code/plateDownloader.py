@@ -394,7 +394,7 @@ if __name__ == '__main__':
 
     if argv[i] == '-i':
         i = int(argv[i+1])
-        with open(r'/storage/users/g-and-n/plates_to_download.txt', 'r') as f:
+        with open(r'/storage/users/g-and-n/tabular_plates_to_download.txt', 'r') as f:
             plates = [p.strip() for p in f.readlines()]
             plate_numbers = plates[i].split(' ')
 
