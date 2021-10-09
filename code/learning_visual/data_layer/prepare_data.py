@@ -135,8 +135,10 @@ def get_data_stats(train_mt_df, train_plates, data_dir, device):
     # TODO: Replace with actual numbers from more plates
     train_plates = []
     if not train_plates:
-        mean = [0.297140896320343, 0.1698523908853531, 0.2917635142803192, 0.2994919419288635, 0.2939795255661011]
-        std = [0.5286955237388611, 0.5789692997932434, 0.5276283025741577, 0.48252999782562256, 0.5313940644264221]
+        # mean = [0.297140896320343, 0.1698523908853531, 0.2917635142803192, 0.2994919419288635, 0.2939795255661011]
+        # std = [0.5286955237388611, 0.5789692997932434, 0.5276283025741577, 0.48252999782562256, 0.5313940644264221]
+        mean = [215.510986328125, 302.5955810546875, 295.8420104980469, 243.8953094482422, 175.49066162109375]
+        std = [460.71197509765625, 265.6319885253906, 437.4438171386719, 448.2676086425781, 330.2315979003906]
     else:
         logging.info('calculating mean and std...')
         mean, std = calc_mean_and_std(train_mt_df, data_dir, len(train_plates), device)
@@ -148,18 +150,20 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device):
     train_data = dataset.CovidDataset(mt_df, root_dir=data_dir, target_channel=None,
                                       for_data_statistics_calc=True)
     batch_size = int(len(train_data) / num_batches)
-    # TODO: Why this size?
-    # batch_size = 512
     train_loader = DataLoader(train_data, batch_size=batch_size)
     num_channels = len(dataset.Channels)
 
     mean = torch.zeros(num_channels).to(device)
     std = torch.zeros(num_channels).to(device)
+    max_p = 0
+    min_p = 65535
 
     for images in train_loader:
         images = images.to(device)
         # TODO: Divide by maximum value was removed
-        batch_mean, batch_std = torch.std_mean(images.float().div(255), dim=(0, 1, 2))
+        batch_mean, batch_std = torch.std_mean(images.float(), dim=(0, 1, 2))
+        max_p = max(torch.max(images.float()), max_p)
+        min_p = min(torch.min(images).float(), min_p)
 
         mean += batch_mean
         std += batch_std
@@ -168,6 +172,8 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device):
     std /= num_batches
     print('mean of train data is ' + str(mean.tolist()))
     print('std of train data is ' + str(std.tolist()))
+    print('maximum of train data is ' + str(max_p.tolist()))
+    print('minimum of train data is ' + str(min_p.tolist()))
 
     return mean.tolist(), std.tolist()
 

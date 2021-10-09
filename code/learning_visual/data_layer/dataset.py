@@ -14,8 +14,10 @@ FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
 LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
 Tensor = FloatTensor
 
-# Maximum value of a pixel
-VMAX = 65535
+# Pixel Attributes
+BITS_PER_PIXEL = 16  # 16 for tiff, 8 for png
+VMAX = 2 ** BITS_PER_PIXEL - 1
+DTYPE = f'float32'
 
 
 class Channels(Enum):
@@ -54,7 +56,7 @@ RGB_MAP = {
 }
 
 
-def convert_tensor_to_rgb(t, channels=Channels, vmax=65535, rgb_map=RGB_MAP):
+def convert_tensor_to_rgb(t, channels=Channels, vmax=VMAX, rgb_map=RGB_MAP):
     """
     Converts and returns the image data as RGB image
     Parameters
@@ -113,7 +115,7 @@ class CovidDataset(Dataset):
     def __len__(self):
         return len(self.metadata_file)
 
-    def load_images_as_tensor(self, image_paths, dtype=np.uint8):
+    def load_images_as_tensor(self, image_paths, dtype=np.dtype(DTYPE)):
         n_channels = len(image_paths)
 
         data = np.ndarray(shape=(*self.im_shape, n_channels), dtype=dtype)

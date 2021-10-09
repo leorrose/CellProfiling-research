@@ -5,6 +5,7 @@ import sys
 import pandas as pd
 import pytorch_lightning as pl
 import scipy
+from sklearn.metrics import mean_squared_error
 from pytorch_lightning.loggers import TensorBoardLogger
 from tqdm import tqdm
 
@@ -34,28 +35,26 @@ def test_by_partition(model, test_dataloaders, input_size, input_channels, exp_d
 def test(model, data_loader, input_size, input_channels=4, title='', save_dir='', show_images=True):
     start = 0
     results = pd.DataFrame(
-        columns=['Plate', 'Well', 'Site', 'ImageNumber', 'Well_Role', 'Broad_Sample', 'PCC'])
-    # results = {}
-    pccs = []
-    for i, (input, target, ind) in tqdm(enumerate(data_loader), total=len(data_loader)):
+        columns=['Plate', 'Well', 'Site', 'ImageNumber', 'Well_Role', 'Broad_Sample', 'PCC', 'MSE'])
+
+    for i, (inp, target, ind) in tqdm(enumerate(data_loader), total=len(data_loader)):
         rec = data_loader.dataset.metadata_file.iloc[ind].drop([c.name for c in Channels], axis=1)
-        pred = process_image(model, input, input_size, input_channels)
+        pred = process_image(model, inp, input_size, input_channels)
         pcc, p_value = scipy.stats.pearsonr(pred.flatten(), target.cpu().detach().numpy().flatten())
+        mse = mean_squared_error(pred.flatten(), target.cpu().detach().numpy().flatten())
         results = results.append(rec, ignore_index=True)
         results.PCC[start] = pcc
-        # pccs.append(pcc)
+        results.MSE[start] = mse
 
         if show_images and start == 0:
             # TODO: Reverse transform
             if input_channels == 5:
-                show_input_and_target(input.cpu().detach().numpy()[0, :, :, :],
+                show_input_and_target(inp.cpu().detach().numpy()[0, :, :, :],
                                       pred=pred, title=title, save_dir=save_dir)
             else:
-                show_input_and_target(input.cpu().detach().numpy()[0, :, :, :],
+                show_input_and_target(inp.cpu().detach().numpy()[0, :, :, :],
                                       target.cpu().detach().numpy()[0, :, :, :], pred, title, save_dir)
         start += 1
-
-    # results['pcc'] = pccs
 
     return results
 
@@ -80,6 +79,10 @@ def main(Model, args, kwargs={}):
     logging.info('Preparing data...')
     dataloaders = load_data(args)
     logging.info('Preparing data finished.')
+
+    # dataloaders['val'].dataset.__getitem__(0, True)
+    # dataloaders['val_for_test'].dataset.__getitem__(0, True)
+    # exit(42)
 
     model = Model.model_class(**Model.params)
     if args.mode == 'predict' and args.checkpoint is not None:
@@ -137,15 +140,12 @@ if __name__ == '__main__':
         # Model_Config.UNET5TO5
     ]
 
-    exps1_64 = [(input_size, lr, batch_size)
-                for input_size in [(128, 128), (206, 232), (256, 256), (520, 696)]
-                for lr in [1.5e-4, 1.5e-3, 1.5e-2, 1.5e-1]
-                for batch_size in [16, 32, 36, 64]]
     exps = [(input_size, lr, batch_size)
-            for input_size in [(206, 232), (256, 256), (260, 232)]
+            for input_size in [(128, 128), (130, 116), (260, 232), (256, 256)]
+            for batch_size in [16, 32, 36, 64]
             for lr in [1.5e-4, 1.0e-4, 1.5e-3, 1.0e-3, 1.5e-2, 1.0e-2]
-            for batch_size in [8, 16, 24, 32]]
-    exp_values = exps[exp_num - 1 - 64]
+            ]
+    exp_values = exps[exp_num - 1]
 
     input_size, lr, batch_size = exp_values
     exp_dict = {'input_size': input_size, 'lr': lr,
