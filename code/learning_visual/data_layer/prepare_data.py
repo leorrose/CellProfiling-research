@@ -7,6 +7,7 @@ import torch
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
+import data_layer.channels
 from data_layer import transforms, dataset
 from data_layer.dataset import CovidDataset, VMAX
 
@@ -35,10 +36,7 @@ def load_data(args):
     mt_df = pd.concat(dfs, ignore_index=True)
 
     partitions = split_by_plates(mt_df, args.plates_split[0], args.plates_split[1],
-                                 args.test_samples_per_plate)
-    partitions['train'], partitions['val'] = train_test_split(np.asarray(partitions['train']),
-                                                              train_size=args.split_ratio,
-                                                              shuffle=True)
+                                 args.test_samples_per_plate, args.split_ratio)
 
     partitions = partitions_idx_to_dfs(mt_df, partitions)
 
@@ -50,9 +48,16 @@ def load_data(args):
     return data_loaders
 
 
-def split_by_plates(df, train_plates, test_plates=None, test_samples_per_plate=None) -> dict:
+def split_by_plates(df, train_plates, test_plates=None, test_samples_per_plate=None, split_ratio=0.8) -> dict:
+    train_plates, val_plates = train_test_split(train_plates, train_size=split_ratio, shuffle=True)
+    test_plates = val_plates
+    logging.info(f'Train Plates: {" ".join(str(t) for t in train_plates)}')
+    logging.info(f'Validation Plates: {" ".join(str(t) for t in val_plates)}')
+    logging.info(f'Test Plates: {" ".join(str(t) for t in test_plates)}' if test_plates else 'There are no test plates')
+
     partitions = {
         'train': list(df[(df['Plate'].isin(train_plates)) & (df['Well_Role'] == 'mock')].index),
+        'val': list(df[(df['Plate'].isin(val_plates)) & (df['Well_Role'] == 'mock')].index),
         'test': {}
     }
 
@@ -135,8 +140,6 @@ def get_data_stats(train_mt_df, train_plates, data_dir, device):
     # TODO: Replace with actual numbers from more plates
     train_plates = []
     if not train_plates:
-        # mean = [0.297140896320343, 0.1698523908853531, 0.2917635142803192, 0.2994919419288635, 0.2939795255661011]
-        # std = [0.5286955237388611, 0.5789692997932434, 0.5276283025741577, 0.48252999782562256, 0.5313940644264221]
         mean = [215.510986328125, 302.5955810546875, 295.8420104980469, 243.8953094482422, 175.49066162109375]
         std = [460.71197509765625, 265.6319885253906, 437.4438171386719, 448.2676086425781, 330.2315979003906]
     else:
@@ -151,7 +154,7 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device):
                                       for_data_statistics_calc=True)
     batch_size = int(len(train_data) / num_batches)
     train_loader = DataLoader(train_data, batch_size=batch_size)
-    num_channels = len(dataset.Channels)
+    num_channels = len(data_layer.channels.Channels)
 
     mean = torch.zeros(num_channels).to(device)
     std = torch.zeros(num_channels).to(device)

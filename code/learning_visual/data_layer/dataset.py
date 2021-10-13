@@ -4,9 +4,11 @@ import cv2
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+
+from data_layer.channels import Channels
 from visuals.visualize import show_input_and_target
 
-from enum import Enum, auto
+
 
 use_cuda = torch.cuda.is_available()
 print("USE CUDA=" + str(use_cuda))
@@ -18,15 +20,6 @@ Tensor = FloatTensor
 BITS_PER_PIXEL = 16  # 16 for tiff, 8 for png
 VMAX = 2 ** BITS_PER_PIXEL - 1
 DTYPE = f'float32'
-
-
-class Channels(Enum):
-    AGP = auto()
-    DNA = auto()
-    ER = auto()
-    Mito = auto()
-    RNA = auto()
-
 
 RGB_MAP = {
     1: {
@@ -105,6 +98,7 @@ class CovidDataset(Dataset):
         self.metadata_file = metadata_df
         self.root_dir = root_dir
         self.target_channel = target_channel.value if target_channel else None
+        self.target_channel_enum = target_channel
         self.input_channels = input_channels
         self.transform = transform
         self.im_shape = im_shape
@@ -229,6 +223,6 @@ class CovidDataset(Dataset):
 
         if show_sample:
             show_input_and_target(inp.detach().numpy(), target.detach().numpy(),
-                                  title='after split to train and target')
+                                  title='after split to train and target', target_channel=self.target_channel_enum)
 
         return inp, target

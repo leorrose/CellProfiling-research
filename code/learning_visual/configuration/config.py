@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from data_layer.dataset import Channels
+from data_layer.channels import Channels
 from util.files_operations import make_folder
 
 print('__Python VERSION:', sys.version)
@@ -53,7 +53,7 @@ def parse_args(model, target_channel, exp_num=None):
     parser.add_argument('--split-ratio', type=float, default=0.8,
                         help='split ratio between train and validation. value in [0,1]')
 
-    parser.add_argument('--num-data-workers', type=int, default=32,
+    parser.add_argument('--num-data-workers', type=int, default=6,
                         help='number of data loader workers')
     parser.add_argument('--device', type=str, default=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
                         help='device for running code')
