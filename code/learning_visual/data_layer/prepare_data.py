@@ -50,7 +50,7 @@ def load_data(args):
 
 def split_by_plates(df, train_plates, test_plates=None, test_samples_per_plate=None, split_ratio=0.8) -> dict:
     train_plates, val_plates = train_test_split(train_plates, train_size=split_ratio, shuffle=True)
-    test_plates = val_plates
+
     logging.info(f'Train Plates: {" ".join(str(t) for t in train_plates)}')
     logging.info(f'Validation Plates: {" ".join(str(t) for t in val_plates)}')
     logging.info(f'Test Plates: {" ".join(str(t) for t in test_plates)}' if test_plates else 'There are no test plates')

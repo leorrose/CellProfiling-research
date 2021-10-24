@@ -3,8 +3,11 @@ from argparse import Namespace
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+from torchmetrics.functional import pearson_corrcoef
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from torch import nn
+
+from process_images import process_image
 
 
 class Unet(pl.LightningModule):
@@ -20,6 +23,7 @@ class Unet(pl.LightningModule):
         self.save_hyperparameters(kwargs)
         self.n_channels = hparams.n_input_channels
         self.n_classes = hparams.n_classes
+        self.input_size = hparams.input_size
         self.h = hparams.input_size[0]
         self.w = hparams.input_size[1]
         self.minimize_net_factor = hparams.minimize_net_factor
@@ -89,31 +93,24 @@ class Unet(pl.LightningModule):
         return self.out(x)
 
     def training_step(self, batch, batch_nb):
-
         x, y = batch
         x, y = x.to(self.device), y.to(self.device)
         y_hat = self.forward(x)
-        # x = x.view(x.size(0), -1)
-        # z = self.encoder(x)
-        # x_hat = self.decoder(z)
-        # y = y.view(y.size(0), -1)
         loss = F.mse_loss(y_hat, y)
-        tensorboard_logs = {'train_loss': loss}
-        self.log('train_loss', loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        tensorboard_logs = {'train_loss': loss.detach()}
+        self.log('train_loss', loss.detach(), on_step=False, on_epoch=True, prog_bar=True, logger=True)
         return {'loss': loss, 'log': tensorboard_logs}
 
     def validation_step(self, batch, batch_nb):
-        x, y = batch
-        x, y = x.to(self.device), y.to(self.device)
-        y_hat = self.forward(x)
-        loss = F.mse_loss(y_hat, y)
+        _, loss, pcc = unify_test_function(self, batch)
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_pcc', pcc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return {'val_loss': loss}
 
     def validation_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        tensorboard_logs = {'val_loss': avg_loss}
-        self.log('avg_val_loss', avg_loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        tensorboard_logs = {'val_loss': avg_loss.detach()}
+        self.log('avg_val_loss', avg_loss.detach(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return {'avg_val_loss': avg_loss, 'log': tensorboard_logs}
 
     def configure_optimizers(self):
@@ -123,6 +120,21 @@ class Unet(pl.LightningModule):
         early_stop = EarlyStopping(monitor="val_loss", mode="min", patience=6, verbose=True)
         checkpoint = ModelCheckpoint(monitor="val_loss")
         return [early_stop, checkpoint]
+
+
+def unify_test_function(model, batch):
+    if len(batch) == 3:
+        x, y, _ = batch
+    else:
+        x, y = batch
+
+    x, y = x.to(model.device), y.to(model.device)
+    pred = process_image(model, x, model.input_size, model.n_channels)
+    loss = F.mse_loss(pred.detach(), y)
+    pcc = pearson_corrcoef(pred.reshape(-1), y.reshape(-1))
+    return pred.detach(), loss.detach(), pcc.detach()
+
+
     # def __dataloader(self):
     #     dataset = self.hparams.dataset
     #     dataset = DirDataset(f'./dataset/{dataset}/train', f'./dataset/{dataset}/train_masks')

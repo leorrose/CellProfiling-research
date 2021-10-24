@@ -4,17 +4,15 @@ import sys
 
 import pandas as pd
 import pytorch_lightning as pl
-import scipy
-from pytorch_lightning.loggers import TensorBoardLogger
 import torch
-from sklearn.metrics import mean_squared_error
+from pytorch_lightning.loggers import TensorBoardLogger
 from tqdm import tqdm
 
 from configuration import config
 from configuration.model_config import Model_Config
 from data_layer.channels import Channels
 from data_layer.prepare_data import load_data
-from process_images import process_image
+from model_layer.UNET import unify_test_function
 from util.files_operations import save_to_pickle, is_file_exist
 from visuals.visualize import show_input_and_target
 
@@ -49,17 +47,16 @@ def test(model, data_loader, input_size, input_channels=4, title='', save_dir=''
     results = pd.DataFrame(
         columns=['Plate', 'Well', 'Site', 'ImageNumber', 'Well_Role', 'Broad_Sample', 'PCC', 'MSE'])
 
-    for i, (inp, target, ind) in tqdm(enumerate(data_loader), total=len(data_loader)):
+    for i, batch in tqdm(enumerate(data_loader), total=len(data_loader)):
+        (inp, target, ind) = batch
         rec = data_loader.dataset.metadata_file.iloc[ind].drop([c.name for c in Channels], axis=1)
-        pred = process_image(model, inp, input_size, input_channels)
-        pred = pred.cpu().detach().numpy()
-        pcc, p_value = scipy.stats.pearsonr(pred.flatten(), target.cpu().detach().numpy().flatten())
-        mse = mean_squared_error(pred.flatten(), target.cpu().detach().numpy().flatten())
+        pred, mse, pcc = unify_test_function(model, batch)
         results = results.append(rec, ignore_index=True)
-        results.PCC[start] = pcc
-        results.MSE[start] = mse
+        results.PCC[start] = pcc.cpu().numpy()
+        results.MSE[start] = mse.cpu().numpy()
 
         if show_images and start == 0:
+            pred = pred.cpu().detach().numpy()
             # TODO: Reverse transform (?)
             if input_channels == 5:
                 show_input_and_target(inp.cpu().detach().numpy()[0, :, :, :],
@@ -107,15 +104,16 @@ def main(Model, args, kwargs={}):
         model.to(args.device)
         logging.info('loading model from file finished')
 
-        # # Check test process
-        t_plate = '24357'  # '24294'
+        logging.info('testing model...')
+        model.eval()
+
+        # # # Check test process
+        # t_plate = '24357'  # '24294'
         # inp0, target0, idx0 = dataloaders['test'][t_plate]['mock'].dataset.__getitem__(0)
         # inp1, target1, idx1 = dataloaders['test'][t_plate]['mock'].dataset.__getitem__(1)
-        # inp, target = torch.stack([inp0, inp1]).to(args.device), torch.stack([target0, target1]).to(args.device)
-        # pred = process_image(model, inp, args.input_size, args.num_input_channels)
-        # pcc, p_value = scipy.stats.pearsonr(pred.cpu().detach().numpy().flatten(), target.cpu().detach().numpy().flatten())
+        # batch = torch.stack([inp0, inp1]).to(args.device), torch.stack([target0, target1]).to(args.device)
+        # res = unify_test_function(model, batch)
 
-        logging.info('testing model...')
         res = test_by_partition(model, dataloaders['test'], args.input_size, args.num_input_channels, args.exp_dir)
         logging.info('testing model finished...')
 
@@ -128,7 +126,7 @@ def main(Model, args, kwargs={}):
                                    name='log_dir')  # Model.name + " on channel" + args.target_channel.name)
         trainer = pl.Trainer(max_epochs=args.epochs, progress_bar_refresh_rate=1, logger=logger, gpus=1,
                              auto_scale_batch_size='binsearch', weights_summary='full')
-        trainer.fit(model, dataloaders['train'], dataloaders['val'])
+        trainer.fit(model, dataloaders['train'], dataloaders['val_for_test'])
         logging.info('training model finished.')
 
 
@@ -150,7 +148,7 @@ def print_exp_description(Model, args, kwargs):
 
 
 if __name__ == '__main__':
-    exp_num = int(sys.argv[1])+100  # if None, new experiment directory is created with the next available number
+    exp_num = int(sys.argv[1])  # if None, new experiment directory is created with the next available number
     DEBUG = False
 
     models = [
@@ -164,7 +162,7 @@ if __name__ == '__main__':
             for batch_size in [16, 32, 36, 64]
             for lr in [1.5e-4, 1.0e-4, 1.5e-3, 1.0e-3, 1.5e-2, 1.0e-2]
             ]
-    exp_values = exps[exp_num - 1 - 100]
+    exp_values = exps[exp_num - 1]
 
     input_size, lr, batch_size = exp_values
     exp_dict = {'input_size': input_size, 'lr': lr,

@@ -12,7 +12,7 @@
 #SBATCH --mail-user=naorko@post.bgu.ac.il	### user email for sending job status
 #SBATCH --mail-type=ARRAY_TASKS,FAIL			### conditions when to send the email. ALL,BEGIN,END,FAIL, REQUEU, NONE
 
-#SBATCH --gres=gpu:1				### number of GPUs, ask for more than 1 only if you can parallelize your code for multi GPU
+#SBATCH --gpus=1				### number of GPUs, ask for more than 1 only if you can parallelize your code for multi GPU
 #SBATCH --mem=32G				### amount of RAM memory
 ##SBATCH --cpus-per-task=4			### number of CPU cores
 

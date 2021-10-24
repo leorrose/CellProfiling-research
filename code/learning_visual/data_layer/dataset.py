@@ -8,8 +8,6 @@ from torch.utils.data import Dataset
 from data_layer.channels import Channels
 from visuals.visualize import show_input_and_target
 
-
-
 use_cuda = torch.cuda.is_available()
 print("USE CUDA=" + str(use_cuda))
 FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
