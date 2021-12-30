@@ -148,33 +148,42 @@ def print_exp_description(Model, args, kwargs):
 
 
 if __name__ == '__main__':
-    exp_num = int(sys.argv[1])  # if None, new experiment directory is created with the next available number
+    inp = int(sys.argv[1])
+    # model_id = inp // 100
+    channel_id = (inp // 100) - 1
+    mf = 16  # 2 ** (inp % 10)
+    plate_id = (inp % 100) - 1
+
+    exp_num = inp  # if None, new experiment directory is created with the next available number
     DEBUG = False
 
     models = [
         # Model_Config.UNET1TO1,
         Model_Config.UNET4TO1,
-        # Model_Config.UNET5TO5
+        # Model_Config.UNET5TO5,
+        # Model_Config.AUTO1T01,
+        # Model_Config.AUTO4T01
     ]
+    # models = [models[model_id]]
 
     exps = [(input_size, lr, batch_size)
             for input_size in [(128, 128), (130, 116), (260, 232), (256, 256)]
             for batch_size in [16, 32, 36, 64]
             for lr in [1.5e-4, 1.0e-4, 1.5e-3, 1.0e-3, 1.5e-2, 1.0e-2]
             ]
-    exp_values = exps[exp_num - 1]
+    exp_values = exps[49 - 1]
 
     input_size, lr, batch_size = exp_values
     exp_dict = {'input_size': input_size, 'lr': lr,
-                'epochs': 20, 'minimize_net_factor': 1}
+                'epochs': 20, 'minimize_net_factor': mf}
 
     # channels_to_predict = [Channels.AGP]
-    channels_to_predict = [Channels.DNA]
+    # channels_to_predict = [Channels.DNA]
     # channels_to_predict = [Channels.ER]
     # channels_to_predict = [Channels.Mito]
     # channels_to_predict = [Channels.RNA]
-    # chan_id = int(sys.argv[1]) - 1
-    # channels_to_predict = [list(Channels)[chan_id]]
+
+    channels_to_predict = [list(Channels)[channel_id]]
 
     for model in models:
         model.update_custom_params(exp_dict)
@@ -185,19 +194,28 @@ if __name__ == '__main__':
 
             args.mode = 'train'
             args.mode = 'predict'
+            # args.plates_split = [
+            #     [
+            #         24357, 24585, 24623, 24661, 24735, 24792, 25392, 25569, 25588, 25683, 25726, 25912, 25955, 25997,
+            #         26207, 26576, 26640, 26674, 26745, 24300, 24509, 24594, 24631, 24683, 24752, 24796, 25406, 25570,
+            #         25599, 25686, 25732, 25918, 26115, 26247, 26577, 26641, 26677, 26765, 24303, 24517, 24609, 24685,
+            #         24756, 25372, 25422, 25571, 25663, 25692, 25742, 25937, 26124, 26271, 26600, 26662, 26683, 26771,
+            #         26724, 26795],
+            #     [24294, 24311, 25938, 25985, 25987, 24633,
+            #      24309, 24523, 24611, 24634, 24687, 24759, 25374, 25432, 25573, 25664, 25695, 25854, 25989, 26133,
+            #      26562, 26611, 26664, 26685, 26786, 24525, 24617, 24640, 24688, 24773, 25380, 25492, 25575, 25676,
+            #      25708, 25857, 25944, 25991, 26174, 26563, 26622, 26666, 26695, 26794, 24321, 24562, 24619, 24654,
+            #      24734, 24774, 25382, 25566, 25579, 25680, 25725, 25862, 25945, 25994, 26204, 26564, 26623, 26672
+            #      ]
+            # ]
+
+            plates = [24792, 25912, 24509, 24633, 25987, 25680, 25422, 24517, 25664, 25575, 26674, 25945, 24687, 24752,
+                      24311, 26622, 26641, 24594, 25676, 24774, 26562, 25997, 26640, 24562, 25938, 25708, 24321, 24735,
+                      26786, 25571, 26666, 24294, 24640, 25985, 24661]
+
             args.plates_split = [
-                [
-                    24357, 24585, 24623, 24661, 24735, 24792, 25392, 25569, 25588, 25683, 25726, 25912, 25955, 25997,
-                    26207, 26576, 26640, 26674, 26745, 24300, 24509, 24594, 24631, 24683, 24752, 24796, 25406, 25570,
-                    25599, 25686, 25732, 25918, 26115, 26247, 26577, 26641, 26677, 26765, 24303, 24517, 24609, 24685,
-                    24756, 25372, 25422, 25571, 25663, 25692, 25742, 25937, 26124, 26271, 26600, 26662, 26683, 26771,
-                    26724, 26795],
-                [24294, 24311, 25938, 25985, 25987, 24633,
-                 24309, 24523, 24611, 24634, 24687, 24759, 25374, 25432, 25573, 25664, 25695, 25854, 25989, 26133,
-                 26562, 26611, 26664, 26685, 26786, 24525, 24617, 24640, 24688, 24773, 25380, 25492, 25575, 25676,
-                 25708, 25857, 25944, 25991, 26174, 26563, 26622, 26666, 26695, 26794, 24321, 24562, 24619, 24654,
-                 24734, 24774, 25382, 25566, 25579, 25680, 25725, 25862, 25945, 25994, 26204, 26564, 26623, 26672
-                 ]
+                [p for p in plates if p != plates[plate_id]],
+                [plates[plate_id]]  # , 25862, 26672, 24734, 25991, 25382, 25566]
             ]
 
             args.test_samples_per_plate = None

@@ -16,7 +16,6 @@ class Unet(pl.LightningModule):
     def __init__(self, *args, **kwargs):
         super(Unet, self).__init__()
 
-        # self.params = params
         if isinstance(kwargs, dict):
             hparams = Namespace(**kwargs)
 
@@ -133,34 +132,3 @@ def unify_test_function(model, batch):
     loss = F.mse_loss(pred.detach(), y)
     pcc = pearson_corrcoef(pred.reshape(-1), y.reshape(-1))
     return pred.detach(), loss.detach(), pcc.detach()
-
-
-    # def __dataloader(self):
-    #     dataset = self.hparams.dataset
-    #     dataset = DirDataset(f'./dataset/{dataset}/train', f'./dataset/{dataset}/train_masks')
-    #     n_val = int(len(dataset) * 0.1)
-    #     n_train = len(dataset) - n_val
-    #     train_ds, val_ds = random_split(dataset, [n_train, n_val])
-    #     train_loader = DataLoader(train_ds, batch_size=1, pin_memory=True, shuffle=True)
-    #     val_loader = DataLoader(val_ds, batch_size=1, pin_memory=True, shuffle=False)
-    #
-    #     return {
-    #         'train': train_loader,
-    #         'val': val_loader,
-    #     }
-    #
-    # @pl.data_loader
-    # def train_dataloader(self):
-    #     return self.__dataloader()['train']
-    #
-    # @pl.data_loader
-    # def val_dataloader(self):
-    #     return self.__dataloader()['val']
-
-    # @staticmethod
-    # def add_model_specific_args(parent_parser):
-    #     parser = ArgumentParser(parents=[parent_parser])
-    #
-    #     parser.add_argument('--n_channels', type=int, default=3)
-    #     parser.add_argument('--n_classes', type=int, default=1)
-    #     return parser
