@@ -72,4 +72,19 @@ class TopKFromDupWithMatchFilterStrategy(TopKFromDupFilterStrategy):
         topk_df = super().filter_dataframe(compounds, field)
         comp_names = topk_df.index.get_level_values(1).unique()
         topk_df = compounds[compounds.index.isin(comp_names, 1)]
+        self._filter_threshold = topk_df[field].min()
         return topk_df
+
+
+class MatchFilterDecorator(FilterStrategy):
+    def __init__(self, filter_strategy: FilterStrategy, compounds: pd.DataFrame, field: str):
+        self._filter_strategy = filter_strategy
+        self._filtered_base = filter_strategy.filter_dataframe(compounds, field)
+
+    def filter_dataframe(self, compounds: pd.DataFrame, field: str):
+        cur_filtered = self._filter_strategy.filter_dataframe(compounds, field)
+        cur_filtered = cur_filtered.loc[[x for x in cur_filtered.index if x in self._filtered_base.index]]
+        return cur_filtered
+
+    def get_filter_threshold(self) -> float:
+        return self._filter_strategy.get_filter_threshold()
