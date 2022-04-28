@@ -1,0 +1,91 @@
+from argparse import Namespace
+
+import pytorch_lightning as pl
+import torch
+import torch.nn.functional as F
+from torchmetrics.functional import pearson_corrcoef
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+from torch import nn
+
+
+class TabularAE(pl.LightningModule):
+
+    # fixed bug for pl loading model_checkpoint according to https://github.com/PyTorchLightning/pytorch-lightning/issues/2909
+    def __init__(self, *args, **kwargs):
+        super(TabularAE, self).__init__()
+
+        if isinstance(kwargs, dict):
+            hparams = Namespace(**kwargs)
+
+        self.save_hyperparameters(kwargs)
+        self.input_size = hparams.input_size
+        self.target_size = hparams.target_size
+        self.bilinear = True
+
+        self.encoder = nn.Sequential(
+                nn.Linear(self.input_size, 512),
+                nn.ReLU(inplace=True),
+                nn.Linear(512, 256),
+                nn.ReLU(inplace=True),
+                nn.Linear(256, 128),
+                nn.ReLU(inplace=True),
+                nn.Linear(128, 100),
+                nn.ReLU(inplace=True),
+                nn.Linear(100, 50),
+                nn.ReLU(inplace=True),
+                nn.Linear(50, 25),
+                nn.ReLU(inplace=True),
+                nn.Linear(25, 10),
+                nn.ReLU(inplace=True)
+            )
+
+        self.decoder = nn.Sequential(
+            nn.Linear(10, self.target_size),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x):
+        z = self.encoder(x)
+        y_hat = self.decoder(z)
+        return y_hat
+
+    def training_step(self, batch, batch_nb):
+        x, y = batch
+        x, y = x.to(self.device), y.to(self.device)
+        y_hat = self.forward(x)
+        loss = F.mse_loss(y_hat, y)
+        tensorboard_logs = {'train_loss': loss.detach()}
+        self.log('train_loss', loss.detach(), on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        return {'loss': loss, 'log': tensorboard_logs}
+
+    def validation_step(self, batch, batch_nb):
+        _, loss, pcc = unify_test_function(self, batch)
+        self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_pcc', pcc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        return {'val_loss': loss}
+
+    def validation_end(self, outputs):
+        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
+        tensorboard_logs = {'val_loss': avg_loss.detach()}
+        self.log('avg_val_loss', avg_loss.detach(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        return {'avg_val_loss': avg_loss, 'log': tensorboard_logs}
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=self.hparams.lr, weight_decay=1e-8)
+
+    def configure_callbacks(self):
+        early_stop = EarlyStopping(monitor="val_loss", mode="min", patience=6, verbose=True)
+        checkpoint = ModelCheckpoint(monitor="val_loss")
+        return [early_stop, checkpoint]
+
+
+def unify_test_function(model, batch):
+    if len(batch) == 3:
+        x, y, _ = batch
+    else:
+        x, y = batch
+
+    x, y = x.to(model.device), y.to(model.device)
+    loss = F.mse_loss(x, y)
+    pcc = pearson_corrcoef(x.reshape(-1), y.reshape(-1))
+    return x.detach(), loss.detach(), pcc.detach()
