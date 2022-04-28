@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -32,10 +33,17 @@ def load_data(args):
     :return:
     """
 
+    all_plates = sum(args.plates_split, [])
     if args.metadata_path is None:
-        mt_df = create_tabular_metadata(args.plates_path, sum(args.plates_split, []), args.label_field)
+        mt_df = create_tabular_metadata(args.plates_path, all_plates, args.label_field)
     else:
-        mt_df = pd.read_csv(args.metadata_path)
+        mt_df = pd.read_csv(args.metadata_path, dtype={'Plate': int, 'Count': int})
+        mt_df['Indexes'] = mt_df['Indexes'].apply(lambda x: json.loads(x))
+        plates = [p for p in all_plates if p not in mt_df['Plate'].unique()]
+        if plates:
+            add_df = create_tabular_metadata(args.plates_path, plates, args.label_field)
+            mt_df = pd.concat([mt_df, add_df], ignore_index=True)
+            mt_df.to_csv(args.metadata_path, index=False)
 
     partitions = split_by_plates(mt_df, args)
 
@@ -67,9 +75,12 @@ def split_by_plates(df, args) -> dict:
     train_plates, test_plates = args.plates_split
     train_plates, val_plates = train_test_split(train_plates, train_size=args.split_ratio, shuffle=True)
 
-    logging.info(f'Train Plates: {" ".join(str(t) for t in train_plates)}')
-    logging.info(f'Validation Plates: {" ".join(str(t) for t in val_plates)}')
-    logging.info(f'Test Plates: {" ".join(str(t) for t in test_plates)}' if test_plates else 'There are no test plates')
+    # logging.info(f'Train Plates: {" ".join(str(t) for t in train_plates)}')
+    # logging.info(f'Validation Plates: {" ".join(str(t) for t in val_plates)}')
+    # logging.info(f'Test Plates: {" ".join(str(t) for t in test_plates)}' if test_plates else 'There are no test plates')
+    print(f'Train Plates: {" ".join(str(t) for t in train_plates)}')
+    print(f'Validation Plates: {" ".join(str(t) for t in val_plates)}')
+    print(f'Test Plates: {" ".join(str(t) for t in test_plates)}' if test_plates else 'There are no test plates')
 
     partitions = {
         'train': list(df[(df['Plate'].isin(train_plates)) & (df[args.label_field].isin(args.train_labels))].index),
@@ -113,11 +124,11 @@ def create_datasets(plates_split, partitions, data_dir,
                                input_fields, target_fields, norm_params_path)
 
     train_transforms = transforms.Compose([
-        transforms.ToTensor(),
+        # transforms.ToTensor(),
         transforms.Normalize(mean, std)
     ])
     test_transforms = transforms.Compose([
-        transforms.ToTensor(),
+        # transforms.ToTensor(),
         transforms.Normalize(mean, std)
     ])
 
@@ -169,14 +180,22 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device, input_fields, target
     train_data = TabularDataset(mt_df, root_dir=data_dir,
                                 input_fields=input_fields, target_fields=target_fields,
                                 for_data_statistics_calc=True)
-    batch_size = int(len(train_data) / num_batches)
-    train_loader = DataLoader(train_data, batch_size=batch_size)
+    batch_size = 256 #int(len(train_data) / num_batches)
+    num_batches = 0
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     num_channels = len(input_fields) + len(target_fields)
 
     mean = torch.zeros(num_channels).to(device)
     std = torch.zeros(num_channels).to(device)
     max_p = 0
     min_p = 65535
+
+    # from datetime import datetime
+    # print("Before Time =", datetime.now().strftime("%H:%M:%S"))
+    # itd = iter(train_loader)
+    # print("Iter Time =", datetime.now().strftime("%H:%M:%S"))
+    # batch = next(itd)
+    # print("After Time =", datetime.now().strftime("%H:%M:%S"))
 
     for samples in train_loader:
         samples = samples.to(device)
@@ -186,6 +205,7 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device, input_fields, target
 
         mean += batch_mean
         std += batch_std
+        num_batches += 1
 
     mean /= num_batches
     std /= num_batches
