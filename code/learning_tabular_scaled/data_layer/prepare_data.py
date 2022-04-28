@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from data_layer.tabular_dataset import TabularDataset
+from data_layer.tabular_dataset_shuffled import TabularDataset
 
 use_cuda = torch.cuda.is_available()
 FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
@@ -73,7 +73,7 @@ def create_tabular_metadata(plates_path, plates, label_field):
 
 def split_by_plates(df, args) -> dict:
     train_plates, test_plates = args.plates_split
-    train_plates, val_plates = train_test_split(train_plates, train_size=args.split_ratio, shuffle=True)
+    train_plates, val_plates = train_test_split(train_plates, train_size=args.split_ratio, shuffle=False) #TODO: SEED
 
     # logging.info(f'Train Plates: {" ".join(str(t) for t in train_plates)}')
     # logging.info(f'Validation Plates: {" ".join(str(t) for t in val_plates)}')
@@ -180,9 +180,9 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device, input_fields, target
     train_data = TabularDataset(mt_df, root_dir=data_dir,
                                 input_fields=input_fields, target_fields=target_fields,
                                 for_data_statistics_calc=True)
-    batch_size = 256 #int(len(train_data) / num_batches)
+    batch_size = 1024 #int(len(train_data) / num_batches)
     num_batches = 0
-    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
     num_channels = len(input_fields) + len(target_fields)
 
     mean = torch.zeros(num_channels).to(device)
@@ -196,7 +196,7 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device, input_fields, target
     # print("Iter Time =", datetime.now().strftime("%H:%M:%S"))
     # batch = next(itd)
     # print("After Time =", datetime.now().strftime("%H:%M:%S"))
-
+    # exit(42)
     for samples in train_loader:
         samples = samples.to(device)
         batch_mean, batch_std = torch.std_mean(samples.float(), dim=(0,))
@@ -220,7 +220,7 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device, input_fields, target
 def create_data_loaders(datasets, partitions, batch_size, num_workers=32) -> dict:
     data_loaders = {
         'train': DataLoader(datasets['train'], batch_size=batch_size,
-                            shuffle=True, num_workers=num_workers),
+                            shuffle=False, num_workers=num_workers),
         'val': DataLoader(datasets['val'], batch_size=batch_size,
                           shuffle=False, num_workers=num_workers),
         'val_for_test': DataLoader(datasets['val_for_test'], batch_size=batch_size,
