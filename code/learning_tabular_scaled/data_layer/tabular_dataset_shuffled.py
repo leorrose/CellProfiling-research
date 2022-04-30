@@ -84,7 +84,10 @@ class TabularDataset(Dataset):
 
             plate_path = os.path.join(self.root_dir, f'{p}.csv')
             new_df = pd.read_csv(plate_path)
+            # new_df.dropna(inplace=True)
+            new_df.fillna(new_df[self.input_fields+self.target_fields].mean(), inplace=True)
             new_df = new_df.query(f'{self.metadata_df.columns[1]} == "{lbl}"')
+            # TODO: Remove unnecessary fields ?
             if self.shuffle:
                 new_df = new_df.sample(frac=1)
             self.loaded_dfs.append(new_df)
@@ -97,46 +100,18 @@ class TabularDataset(Dataset):
         data = row[self.input_fields + self.target_fields]
         return data.to_numpy().squeeze().astype(np.dtype('float64'))
 
-    def __getitem__(self, idx, show_sample=False):
+    def __getitem__(self, idx):
         inp = self.load_cell(idx)
         if not self.for_data_statistics_calc:
-            # if show_sample:
-            #     trans_input = np.zeros((inp.shape[2], inp.shape[0], inp.shape[1]))
-            #     for i in range(5):
-            #         trans_input[i, :, :] = inp[:, :, i]
-            #     show_input_and_target(trans_input, title='before transforms')
             if self.transform:
                 inp = self.transform(inp)
-                # if show_sample:
-                #     show_input_and_target(inp, title='after transforms')
 
             inp, target = inp[:len(self.input_fields)], inp[len(self.input_fields):]
 
             if self.is_test:
-                # rec = dict_fields_to_str(rec.to_frame().to_dict()[rec.name])
                 return inp, target, idx
             else:
                 return inp, target
         else:
             return inp
 
-    def split_target_from_tensor(self, inp, show_sample=False):
-
-        num_channels = inp.shape[0]
-
-        if self.target_channel == 1:
-
-            target, inp = torch.split(inp, [1, num_channels - 1])
-        elif self.target_channel == num_channels:
-            inp, target = torch.split(inp, [num_channels - 1, 1])
-        else:
-            after = num_channels - self.target_channel
-            before = num_channels - after - 1
-            a, target, c = torch.split(inp, [before, 1, after])
-            inp = torch.cat((a, c), dim=0)
-
-        if show_sample:
-            show_input_and_target(inp.detach().numpy(), target.detach().numpy(),
-                                  title='after split to train and target', target_channel=self.target_channel_enum)
-
-        return inp, target

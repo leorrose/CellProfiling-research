@@ -124,11 +124,9 @@ def create_datasets(plates_split, partitions, data_dir,
                                input_fields, target_fields, norm_params_path)
 
     train_transforms = transforms.Compose([
-        # transforms.ToTensor(),
         transforms.Normalize(mean, std)
     ])
     test_transforms = transforms.Compose([
-        # transforms.ToTensor(),
         transforms.Normalize(mean, std)
     ])
 
@@ -180,8 +178,7 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device, input_fields, target
     train_data = TabularDataset(mt_df, root_dir=data_dir,
                                 input_fields=input_fields, target_fields=target_fields,
                                 for_data_statistics_calc=True)
-    batch_size = 1024 #int(len(train_data) / num_batches)
-    num_batches = 0
+    batch_size = int(len(train_data) / num_batches)
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
     num_channels = len(input_fields) + len(target_fields)
 
@@ -190,13 +187,6 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device, input_fields, target
     max_p = 0
     min_p = 65535
 
-    # from datetime import datetime
-    # print("Before Time =", datetime.now().strftime("%H:%M:%S"))
-    # itd = iter(train_loader)
-    # print("Iter Time =", datetime.now().strftime("%H:%M:%S"))
-    # batch = next(itd)
-    # print("After Time =", datetime.now().strftime("%H:%M:%S"))
-    # exit(42)
     for samples in train_loader:
         samples = samples.to(device)
         batch_mean, batch_std = torch.std_mean(samples.float(), dim=(0,))
@@ -205,7 +195,6 @@ def calc_mean_and_std(mt_df, data_dir, num_batches, device, input_fields, target
 
         mean += batch_mean
         std += batch_std
-        num_batches += 1
 
     mean /= num_batches
     std /= num_batches
