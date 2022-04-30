@@ -24,6 +24,7 @@ class TabularDataset(Dataset):
                  root_dir,
                  input_fields,
                  target_fields=None,
+                 index_fields=None,
                  target_channel=None,
                  transform=None,
                  for_data_statistics_calc=False,
@@ -40,6 +41,7 @@ class TabularDataset(Dataset):
         self.target_channel_enum = target_channel
         self.input_fields = input_fields
         self.target_fields = target_fields
+        self.index_fields = index_fields
         self.transform = transform
 
         self.for_data_statistics_calc = for_data_statistics_calc
@@ -97,11 +99,11 @@ class TabularDataset(Dataset):
             i = -1
 
         row = self.loaded_dfs[i].iloc[idx]
-        data = row[self.input_fields + self.target_fields]
-        return data.to_numpy().squeeze().astype(np.dtype('float64'))
+        ind, data = row[self.index_fields], row[self.input_fields + self.target_fields]
+        return ind.to_numpy().squeeze(), data.to_numpy().squeeze().astype(np.dtype(DTYPE))
 
     def __getitem__(self, idx):
-        inp = self.load_cell(idx)
+        ind, inp = self.load_cell(idx)
         if not self.for_data_statistics_calc:
             if self.transform:
                 inp = self.transform(inp)
@@ -109,7 +111,7 @@ class TabularDataset(Dataset):
             inp, target = inp[:len(self.input_fields)], inp[len(self.input_fields):]
 
             if self.is_test:
-                return inp, target, idx
+                return inp, target, ind
             else:
                 return inp, target
         else:

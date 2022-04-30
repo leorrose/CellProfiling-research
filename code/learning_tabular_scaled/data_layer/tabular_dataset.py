@@ -24,6 +24,7 @@ class TabularDataset(Dataset):
                  root_dir,
                  input_fields,
                  target_fields=None,
+                 index_fields=None,
                  target_channel=None,
                  transform=None,
                  for_data_statistics_calc=False,
@@ -37,6 +38,7 @@ class TabularDataset(Dataset):
         self.target_channel_enum = target_channel
         self.input_fields = input_fields
         self.target_fields = target_fields
+        self.index_fields = index_fields
         self.transform = transform
 
         self.for_data_statistics_calc = for_data_statistics_calc
@@ -63,11 +65,11 @@ class TabularDataset(Dataset):
         plate_path = os.path.join(self.root_dir, f'{p}.csv')
         fields_names = pd.read_csv(plate_path, nrows=0).columns
         row = pd.read_csv(plate_path, nrows=1, skiprows=row_idx, names=fields_names)
-        data = row[self.input_fields + self.target_fields]
-        return data.to_numpy().squeeze()
+        ind, data = row[self.index_fields], row[self.input_fields + self.target_fields]
+        return ind.to_numpy().squeeze(), data.to_numpy().squeeze().astype(np.dtype(DTYPE))
 
     def __getitem__(self, idx, show_sample=False):
-        inp = self.load_cell(idx)
+        ind, inp = self.load_cell(idx)
         if not self.for_data_statistics_calc:
             # if show_sample:
             #     trans_input = np.zeros((inp.shape[2], inp.shape[0], inp.shape[1]))
@@ -83,7 +85,7 @@ class TabularDataset(Dataset):
 
             if self.is_test:
                 # rec = dict_fields_to_str(rec.to_frame().to_dict()[rec.name])
-                return inp, target, idx
+                return inp, target, ind
             else:
                 return inp, target
         else:

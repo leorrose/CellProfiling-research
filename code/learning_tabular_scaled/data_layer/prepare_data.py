@@ -50,7 +50,7 @@ def load_data(args):
     partitions = partitions_idx_to_dfs(mt_df, partitions)
 
     datasets = create_datasets(args.plates_split, partitions, args.plates_path,
-                               args.input_fields, args.target_fields,
+                               args.input_fields, args.target_fields, args.index_fields,
                                args.device, args.norm_params_path)
     print_data_statistics(datasets)
     data_loaders = create_data_loaders(datasets, partitions, args.batch_size, args.num_data_workers)
@@ -117,27 +117,28 @@ def partitions_idx_to_dfs(mt_df, partitions):
 
 
 def create_datasets(plates_split, partitions, data_dir,
-                    input_fields, target_fields,
+                    input_fields, target_fields, index_fields,
                     device, norm_params_path):
     train_plates, test_plates = plates_split
     mean, std = get_data_stats(partitions['train'], train_plates, data_dir, device,
                                input_fields, target_fields, norm_params_path)
+    mean, std = [torch.tensor(lst, dtype=torch.float32) for lst in [mean, std]]
 
-    train_transforms = transforms.Compose([
-        transforms.Normalize(mean, std)
-    ])
-    test_transforms = transforms.Compose([
-        transforms.Normalize(mean, std)
+    tabular_transforms = transforms.Compose([
+        lambda inp: torch.from_numpy(inp),
+        lambda inp: inp.sub_(mean).div_(std)
     ])
 
     datasets = {
-        'train': TabularDataset(partitions['train'], root_dir=data_dir, transform=train_transforms,
-                                input_fields=input_fields, target_fields=target_fields),
-        'val': TabularDataset(partitions['val'], root_dir=data_dir, transform=train_transforms,
-                              input_fields=input_fields, target_fields=target_fields),
-        'val_for_test': TabularDataset(partitions['val'], root_dir=data_dir, transform=test_transforms,
-                                       input_fields=input_fields, target_fields=target_fields,
-                                       is_test=True),
+        'train': TabularDataset(partitions['train'], root_dir=data_dir, transform=tabular_transforms,
+                                input_fields=input_fields, target_fields=target_fields, index_fields=index_fields,
+                                shuffle=True),
+        'val': TabularDataset(partitions['val'], root_dir=data_dir, transform=tabular_transforms,
+                              input_fields=input_fields, target_fields=target_fields, index_fields=index_fields,
+                              shuffle=False),
+        'val_for_test': TabularDataset(partitions['val'], root_dir=data_dir, transform=tabular_transforms,
+                                       input_fields=input_fields, target_fields=target_fields, index_fields=index_fields,
+                                       is_test=True, shuffle=False),
         'test': {}
     }
 
@@ -145,9 +146,9 @@ def create_datasets(plates_split, partitions, data_dir,
         datasets['test'][plate] = {}
         for key in partitions['test'][plate].keys():
             datasets['test'][plate][key] = \
-                TabularDataset(partitions['test'][plate][key], root_dir=data_dir, transform=test_transforms,
-                               input_fields=input_fields, target_fields=target_fields,
-                               is_test=True)
+                TabularDataset(partitions['test'][plate][key], root_dir=data_dir, transform=tabular_transforms,
+                               input_fields=input_fields, target_fields=target_fields, index_fields=index_fields,
+                               is_test=True, shuffle=False)
 
     return datasets
 
@@ -216,6 +217,13 @@ def create_data_loaders(datasets, partitions, batch_size, num_workers=32) -> dic
                                    shuffle=False, num_workers=num_workers),
         'test': {}
     }
+
+    # from time import time
+    # s=time()
+    # batch = next(iter(data_loaders['val_for_test']))
+    # print(f'Took {time()-s} seconds')
+    # exit(42)
+
 
     for plate in list(partitions['test'].keys()):
         data_loaders['test'][plate] = {}

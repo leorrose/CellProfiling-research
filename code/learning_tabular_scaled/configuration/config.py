@@ -8,10 +8,10 @@ import torch
 args = {
     'channels': ['AGP', 'DNA', 'ER', 'Mito', 'RNA'],
     'families': ['Granularity', 'Intensity', 'Location', 'RadialDistribution', 'Texture'],
+    'label_field': 'Metadata_ASSAY_WELL_ROLE',
     'labels': ['mock', 'treated'],
     'train_labels': ['mock'],
-    'label_field': 'Metadata_ASSAY_WELL_ROLE',
-    'index_cols': ['Plate', 'Metadata_ASSAY_WELL_ROLE', 'Metadata_broad_sample', 'Image_Metadata_Well', 'ImageNumber', 'ObjectNumber'],
+    'index_fields': ['Plate', 'Metadata_ASSAY_WELL_ROLE', 'Metadata_broad_sample', 'Image_Metadata_Well', 'ImageNumber', 'ObjectNumber'],
     'cols_file': r'/storage/users/g-and-n/plates/columns.txt',
 
     # Load Data
@@ -28,7 +28,7 @@ args = {
 
     # Loader
     'batch_size': 1024 * 8,
-    'num_data_workers': 12,
+    'num_data_workers': 6,
 }
 
 inp = int(sys.argv[1])
