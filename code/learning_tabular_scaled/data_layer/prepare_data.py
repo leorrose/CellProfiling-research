@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from data_layer.tabular_dataset_shuffled import TabularDataset
+from data_layer.tabular_dataset_with_ram import TabularDataset
 
 use_cuda = torch.cuda.is_available()
 FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
