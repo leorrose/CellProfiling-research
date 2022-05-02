@@ -79,7 +79,7 @@ def parse_args(channel_idx=0, exp_num=None):
     args.cols_dict = json.load(open(args.cols_file, 'r'))
     args.input_fields = sum([args.cols_dict[k] for k in args.input_channels], [])
     args.target_fields = sum([args.cols_dict[k] for k in args.target_channels], [])
-    n_pth = fr"/storage/users/g-and-n/plates/try{'_'.join(args.input_channels)}-{'_'.join(args.target_channels)}.normsav"
+    n_pth = fr"/storage/users/g-and-n/plates/{'_'.join(args.input_channels)}-{'_'.join(args.target_channels)}.normsav"
     args.norm_params_path = n_pth
 
     args.exp_dir = os.path.join(args.output_root_path, str(exp_num), "channel " + '-'.join(args.target_channels))
