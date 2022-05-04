@@ -73,14 +73,11 @@ def create_tabular_metadata(plates_path, plates, label_field):
 
 def split_by_plates(df, args) -> dict:
     train_plates, test_plates = args.plates_split
-    train_plates, val_plates = train_test_split(train_plates, train_size=args.split_ratio, shuffle=False) #TODO: SEED
+    train_plates, val_plates = train_test_split(train_plates, train_size=args.split_ratio, shuffle=True) #TODO: SEED
 
-    # logging.info(f'Train Plates: {" ".join(str(t) for t in train_plates)}')
-    # logging.info(f'Validation Plates: {" ".join(str(t) for t in val_plates)}')
-    # logging.info(f'Test Plates: {" ".join(str(t) for t in test_plates)}' if test_plates else 'There are no test plates')
-    print(f'Train Plates: {" ".join(str(t) for t in train_plates)}')
-    print(f'Validation Plates: {" ".join(str(t) for t in val_plates)}')
-    print(f'Test Plates: {" ".join(str(t) for t in test_plates)}' if test_plates else 'There are no test plates')
+    logging.info(f'Train Plates: {" ".join(str(t) for t in train_plates)}')
+    logging.info(f'Validation Plates: {" ".join(str(t) for t in val_plates)}')
+    logging.info(f'Test Plates: {" ".join(str(t) for t in test_plates)}' if test_plates else 'There are no test plates')
 
     partitions = {
         'train': list(df[(df['Plate'].isin(train_plates)) & (df[args.label_field].isin(args.train_labels))].index),
@@ -220,7 +217,7 @@ def create_data_loaders(datasets, partitions, batch_size, num_workers=32) -> dic
 
     # from time import time
     # s=time()
-    # batch = next(iter(data_loaders['val_for_test']))
+    # batch = next(iter(data_loaders['train']))
     # print(f'Took {time()-s} seconds')
     # exit(42)
 

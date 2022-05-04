@@ -70,6 +70,8 @@ def parse_args(channel_idx=0, exp_num=None):
                         help='number of test samples for each plate. if None, all plates are taken')
     parser.add_argument('--seed', type=int, default=42,
                         help='global seed (for weight initialization, data sampling, etc.). ')
+    parser.add_argument('--epochs', type=int, default=20,
+                        help='number of epochs to train')
 
     args, _ = parser.parse_known_args()
 
@@ -90,6 +92,7 @@ def parse_args(channel_idx=0, exp_num=None):
     setup_determinism(args)
 
     return args
+
 
 def setup_logging(args):
     head = '{asctime}:{levelname}: {message}'

@@ -23,6 +23,14 @@ class TabularAE(pl.LightningModule):
         self.latent_space_dim = hparams.latent_space_dim
         self.bilinear = True
 
+        enc_dims = [2 ** i for i in range(1, 16)
+                    if self.latent_space_dim <= 2 ** i <= self.input_size]
+        enc_layers = [[nn.Linear(self.input_size, enc_dims[-1]), nn.ReLU(inplace=True)]]
+        enc_layers += [[nn.Linear(enc_dims[len(enc_dims) - i], enc_dims[len(enc_dims) - i - 1]),
+                        nn.ReLU(inplace=True)]
+                       for i in range(1, len(enc_dims))]
+        enc_layers = sum(enc_layers, [])
+
         self.encoder = nn.Sequential(
             nn.Linear(self.input_size, 512),
             nn.ReLU(inplace=True),
@@ -36,12 +44,17 @@ class TabularAE(pl.LightningModule):
             nn.ReLU(inplace=True),
             nn.Linear(50, 25),
             nn.ReLU(inplace=True),
-            nn.Linear(25, 10),
-            nn.ReLU(inplace=True)
+            nn.Linear(25, 10)
+            # nn.ReLU(inplace=True)
         )
 
         dec_dims = [2 ** i for i in range(16, 1, -1)
                     if self.latent_space_dim <= 2 ** i <= self.target_size]
+        dec_layers = [[nn.Linear(dec_dims[len(dec_dims) - i], dec_dims[len(dec_dims) - i - 1]),
+                       nn.ReLU(inplace=True)]
+                      for i in range(1, len(dec_dims))]
+        dec_layers += [[nn.Linear(dec_dims[0], self.target_size), nn.ReLU(inplace=True)]]
+        dec_layers = sum(dec_layers, [])
 
         self.decoder = nn.Sequential(
             nn.Linear(10, self.target_size),
@@ -90,6 +103,7 @@ def unify_test_function(model, batch):
         x, y = batch
 
     x, y = x.to(model.device), y.to(model.device)
-    loss = F.mse_loss(x, y)
-    pcc = pearson_corrcoef(x.reshape(-1), y.reshape(-1))
-    return x.detach(), loss.detach(), pcc.detach()
+    y_hat = model.forward(x)
+    loss = F.mse_loss(y_hat.detach(), y)
+    pcc = pearson_corrcoef(y_hat.reshape(-1), y.reshape(-1))
+    return y_hat.detach(), loss.detach(), pcc.detach()

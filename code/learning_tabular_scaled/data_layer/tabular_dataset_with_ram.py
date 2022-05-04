@@ -54,6 +54,7 @@ class TabularDataset(Dataset):
         self.max_load = max_load
         self.loaded_dfs = []
         self.current_start_end = []
+        self.meta_mapper = {}
 
     def __len__(self):
         return self.metadata_df['Count'].sum()
@@ -111,7 +112,8 @@ class TabularDataset(Dataset):
             inp, target = inp[:len(self.input_fields)], inp[len(self.input_fields):]
 
             if self.is_test:
-                return inp, target, ind
+                self.meta_mapper[idx] = ind
+                return inp, target, idx
             else:
                 return inp, target
         else:

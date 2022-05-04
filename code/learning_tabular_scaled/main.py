@@ -1,19 +1,50 @@
+import logging
 import sys
+from time import time
 
 from configuration.config import parse_args
 from configuration.model_config import Model_Config
 from data_layer.prepare_data import load_data
 
-from time import time
+from pytorch_lightning.loggers import TensorBoardLogger
+import pytorch_lightning as pl
+import torch
 
 
 def main(model, args, kwargs={}):
     print_exp_description(model, args, kwargs)
 
+    logging.info('Preparing data...')
     s = time()
     dataloaders = load_data(args)
     e = time()
-    print(f'Done loading data in {e - s} seconds')
+    logging.info(f'Done loading data in {e - s} seconds')
+
+    model = model.model_class(**model.params, batch_size=args.batch_size)
+    if args.mode == 'predict' and args.checkpoint is not None:
+        logging.info('loading model from file...')
+        model = model.load_from_checkpoint(args.checkpoint)
+        model.to(args.device)
+        logging.info('loading model from file finished')
+
+        logging.info('testing model...')
+        model.eval()
+
+        # TODO: TEST EVALUATION
+
+        logging.info('testing model finished...')
+
+        # TODO: SAVE RESULTS
+    else:
+        logging.info('training model...')
+        model.to(args.device)
+        logger = TensorBoardLogger(args.exp_dir,
+                                   name='log_dir')
+        trainer = pl.Trainer(max_epochs=args.epochs, progress_bar_refresh_rate=1, logger=logger,
+                             gpus=int(torch.cuda.is_available()),
+                             auto_scale_batch_size='binsearch', weights_summary='full')
+        trainer.fit(model, dataloaders['train'], dataloaders['val_for_test'])
+        logging.info('training model finished.')
 
 
 def print_exp_description(Model, args, kwargs):
@@ -43,25 +74,29 @@ if __name__ == '__main__':
     exp_num = inp  # if None, new experiment directory is created with the next available number
     DEBUG = False
 
-    exps = [(input_size, lr, batch_size)
-            for input_size in [(128, 128), (130, 116), (260, 232), (256, 256)]
-            for batch_size in [16, 32, 36, 64]
+    exps = [(lr, batch_size)
+            for batch_size in [512, 1024, 2048, 4096, 8196]
             for lr in [1.5e-4, 1.0e-4, 1.5e-3, 1.0e-3, 1.5e-2, 1.0e-2]
             ]
-    exp_values = exps[49 - 1]
+    exp_values = exps[27 - 1]
 
-    input_size, lr, batch_size = exp_values
-    exp_dict = {'input_size': input_size, 'lr': lr,
+    lr, batch_size = exp_values
+    exp_dict = {'lr': lr,
                 'epochs': 20, 'latent_space_dim': lsd}
 
-    channels_to_predict = [1]
+    channels_to_predict = [channel_id]
 
     model = Model_Config.TAE
-    model.update_custom_params(exp_dict)
+
     for target_channel in channels_to_predict:
         # torch.cuda.empty_cache()
         args = parse_args(channel_idx=target_channel, exp_num=exp_num)
         args.batch_size = batch_size
+        args.epochs = exp_dict['epochs']
+
+        exp_dict['input_size'] = len(args.input_fields)
+        exp_dict['target_size'] = len(args.target_fields)
+        model.update_custom_params(exp_dict)
 
         args.mode = 'train'
         # args.mode = 'predict'
@@ -77,7 +112,7 @@ if __name__ == '__main__':
             [p for p in plates if p != plates[plate_id]],
             [plates[plate_id]]
         ]
-        args.split_ratio = 0.1
+        args.split_ratio = 0.8
 
         args.test_samples_per_plate = None
 

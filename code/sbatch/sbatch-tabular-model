@@ -17,8 +17,7 @@
 #SBATCH --cpus-per-task=6			### number of CPU cores
 
 ##SBATCH --array=100-106,110-116,120-126,130-136,140-146,200-206,210-216,220-226,230-236,240-246
-##SBATCH --array=101-135,201-235,301-335,401-435,501-535
-#SBATCH --array=0-4
+#SBATCH --array=101-135,201-235,301-335,401-435,501-535
 
 ### Print some data to output file ###
 echo `date`

@@ -66,7 +66,7 @@ def parse_args(model, target_channel, exp_num=None):
     parser.add_argument('--num_input_channels', type=int, default=model.params['n_input_channels'], choices=(1, 4, 5),
                         help='defines what autoencoder is trained (4to1, 1to1, 5to5)')
     parser.add_argument('--input_size', type=tuple, default=model.params['input_size'],
-                        help='width and hight input into the network')
+                        help='width and height input into the network')
 
     parser.add_argument('--batch_size', type=int, default=36)
     parser.add_argument('--epochs', type=int, default=model.params['epochs'])
