@@ -86,7 +86,7 @@ def parse_args(channel_idx=0, exp_num=None):
 
     args.exp_dir = os.path.join(args.output_root_path, str(exp_num), "channel " + '-'.join(args.target_channels))
     os.makedirs(args.exp_dir, exist_ok=True)
-    args.checkpoint = get_checkpoint(args.output_root_path)
+    args.checkpoint = get_checkpoint(args.exp_dir)
 
     setup_logging(args)
     setup_determinism(args)

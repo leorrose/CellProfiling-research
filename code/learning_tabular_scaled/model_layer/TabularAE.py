@@ -96,7 +96,7 @@ class TabularAE(pl.LightningModule):
         return [early_stop, checkpoint]
 
 
-def unify_test_function(model, batch):
+def unify_test_function(model, batch, mse_reduction='mean'):
     if len(batch) == 3:
         x, y, _ = batch
     else:
@@ -104,6 +104,6 @@ def unify_test_function(model, batch):
 
     x, y = x.to(model.device), y.to(model.device)
     y_hat = model.forward(x)
-    loss = F.mse_loss(y_hat.detach(), y)
+    loss = F.mse_loss(y_hat.detach(), y, reduction=mse_reduction)
     pcc = pearson_corrcoef(y_hat.reshape(-1), y.reshape(-1))
     return y_hat.detach(), loss.detach(), pcc.detach()

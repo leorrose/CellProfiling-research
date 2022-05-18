@@ -1,10 +1,16 @@
 import logging
+import os
+import pickle
 import sys
 from time import time
+
+import pandas as pd
+import numpy as np
 
 from configuration.config import parse_args
 from configuration.model_config import Model_Config
 from data_layer.prepare_data import load_data
+from model_layer.TabularAE import unify_test_function
 
 from pytorch_lightning.loggers import TensorBoardLogger
 import pytorch_lightning as pl
@@ -30,11 +36,11 @@ def main(model, args, kwargs={}):
         logging.info('testing model...')
         model.eval()
 
-        # TODO: TEST EVALUATION
-
+        res = test_by_partition(model, dataloaders['test'], args.exp_dir)
         logging.info('testing model finished...')
 
-        # TODO: SAVE RESULTS
+        save_results(res, args, kwargs)
+
     else:
         logging.info('training model...')
         model.to(args.device)
@@ -62,6 +68,62 @@ def print_exp_description(Model, args, kwargs):
         if not i:
             print()
     print()
+
+
+def test_by_partition(model, test_dataloaders, exp_dir):
+    result_path = os.path.join(exp_dir, 'results')
+    os.makedirs(result_path, exist_ok=True)
+
+    results = []
+    for plate, plate_data in test_dataloaders.items():
+        res_plate_path = os.path.join(result_path, f'{plate}.csv')
+        if not os.path.exists(res_plate_path):
+            plate_results = []
+            for _, dataloader in test_dataloaders[plate].items():
+                plate_res = test(model, dataloader)
+                plate_results.append(plate_res)
+
+            plate_res = pd.concat(plate_results)
+            plate_res.to_csv(res_plate_path, index=False)
+        else:
+            plate_res = pd.read_csv(res_plate_path)
+
+        results.append(plate_res)
+
+    res = pd.concat(results)
+    return res
+
+
+def test(model, data_loader):
+    pred, mse, pcc = zip(*[unify_test_function(model, batch, mse_reduction='none') for batch in data_loader])
+    mses = [i.cpu().numpy() for i in mse]
+    mses = np.concatenate(mses)
+    index = data_loader.dataset.get_index()
+    rec = np.concatenate([index.to_numpy(), mses], axis=1)
+
+    results = pd.DataFrame(rec, columns=data_loader.dataset.index_fields + data_loader.dataset.target_fields)
+    return results
+
+
+def save_results(res, args, kwargs={}):
+    for arg in kwargs:
+        res[arg] = kwargs[arg]
+
+    res_dir = os.path.join(args.exp_dir, 'results.csv')
+    if os.path.isfile(res_dir):
+        prev_res = pd.read_csv(res_dir)
+        res = pd.concat([prev_res, res])
+
+    # save_to_pickle(res, os.path.join(args.exp_dir, 'results.pkl'))
+    save_to_pickle(args, os.path.join(args.exp_dir, 'args.pkl'))
+    res.to_csv(res_dir, index=False)
+
+
+def save_to_pickle(obj, file_path):
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, 'wb') as handle:
+        pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        handle.close()
 
 
 if __name__ == '__main__':
@@ -98,8 +160,8 @@ if __name__ == '__main__':
         exp_dict['target_size'] = len(args.target_fields)
         model.update_custom_params(exp_dict)
 
-        args.mode = 'train'
-        # args.mode = 'predict'
+        # args.mode = 'train'
+        args.mode = 'predict'
 
         plates = [24792, 25912, 24509, 24633, 25987, 25680, 25422,
                   24517, 25664, 25575, 26674, 25945, 24687, 24752,

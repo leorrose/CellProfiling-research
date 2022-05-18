@@ -119,3 +119,12 @@ class TabularDataset(Dataset):
         else:
             return inp
 
+    def get_index(self):
+        index = pd.DataFrame(columns=self.index_fields)
+        lbl_field = self.metadata_df.columns[1]
+        for _, (plate, lbl, _, _, _) in self.metadata_df.iterrows():
+            plate_path = os.path.join(self.root_dir, f'{plate}.csv')
+            df = pd.read_csv(plate_path).query(f'{lbl_field} == "{lbl}"')
+            index = index.append(df[self.index_fields], ignore_index=True)
+
+        return index
