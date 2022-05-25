@@ -38,7 +38,7 @@ def load_data(args):
         mt_df = create_tabular_metadata(args.plates_path, all_plates, args.label_field)
     else:
         mt_df = pd.read_csv(args.metadata_path, dtype={'Plate': int, 'Count': int})
-        mt_df['Indexes'] = mt_df['Indexes'].apply(lambda x: json.loads(x))
+        # mt_df['Indexes'] = mt_df['Indexes'].apply(lambda x: json.loads(x))
         plates = [p for p in all_plates if p not in mt_df['Plate'].unique()]
         if plates:
             add_df = create_tabular_metadata(args.plates_path, plates, args.label_field)
@@ -59,14 +59,14 @@ def load_data(args):
 
 
 def create_tabular_metadata(plates_path, plates, label_field):
-    mt_dict = {'Plate': [], label_field: [], 'Indexes': [], 'Count': []}
+    mt_dict = {'Plate': [], label_field: [], 'Count': []}
     for plate in plates:
         plate_path = os.path.join(plates_path, f'{plate}.csv')
         df = pd.read_csv(plate_path)
         for (p, wr), c in df.groupby(['Plate', label_field]).count().iloc[:, 0].iteritems():
             mt_dict['Plate'].append(p)
             mt_dict[label_field].append(wr)
-            mt_dict['Indexes'].append(list(df[df[label_field] == wr].index))
+            # mt_dict['Indexes'].append(list(df[df[label_field] == wr].index))
             mt_dict['Count'].append(c)
     return pd.DataFrame(mt_dict)
 

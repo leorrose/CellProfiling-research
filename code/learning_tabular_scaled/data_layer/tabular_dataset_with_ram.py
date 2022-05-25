@@ -71,7 +71,7 @@ class TabularDataset(Dataset):
         np.ndarray the tabular data of an index
         """
 
-        p, lbl, idxs, c, cc = self.metadata_df[self.metadata_df['CumCount'] > index].iloc[0]
+        p, lbl, c, cc = self.metadata_df[self.metadata_df['CumCount'] > index].iloc[0]
         idx = index - (cc - c)
 
         found = False
@@ -122,7 +122,7 @@ class TabularDataset(Dataset):
     def get_index(self):
         index = pd.DataFrame(columns=self.index_fields)
         lbl_field = self.metadata_df.columns[1]
-        for _, (plate, lbl, _, _, _) in self.metadata_df.iterrows():
+        for _, (plate, lbl, _, _) in self.metadata_df.iterrows():
             plate_path = os.path.join(self.root_dir, f'{plate}.csv')
             df = pd.read_csv(plate_path).query(f'{lbl_field} == "{lbl}"')
             index = index.append(df[self.index_fields], ignore_index=True)

@@ -58,7 +58,7 @@ class TabularAE(pl.LightningModule):
 
         self.decoder = nn.Sequential(
             nn.Linear(10, self.target_size),
-            nn.ReLU(inplace=True)
+            # nn.ReLU(inplace=True)
         )
 
     def forward(self, x):
