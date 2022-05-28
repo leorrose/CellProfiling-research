@@ -26,6 +26,10 @@ def parse_args(channel_idx=0, exp_num=None):
     parser.add_argument('--labels', type=list,
                         default=['mock', 'treated'],
                         help="the different labels of the samples in the dataset")
+    parser.add_argument('--split_field', type=str, default='Image_Metadata_Well',
+                        help='the field that split the train data')
+    parser.add_argument('--sample_n', type=int, default=16,
+                        help='Sample size for train in split')
     parser.add_argument('--cols_file', type=Path, default='/storage/users/g-and-n/plates/columns.txt',
                         help='json file containing a dictionary maps the different fields into channels')
     parser.add_argument('--index_fields', type=list,

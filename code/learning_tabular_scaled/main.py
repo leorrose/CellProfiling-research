@@ -135,9 +135,9 @@ if __name__ == '__main__':
     lsd = 8  # 2 ** (inp % 10)
     # plate_id = (inp % 100) - 1
     channel_id = inp % 10
-    plate_split_id = inp // 10
+    plate_split_id = 0
 
-    exp_num = (plate_split_id + 1) * 10000  # if None, new experiment directory is created with the next available number
+    exp_num = (plate_split_id + 3) * 10000  # if None, new experiment directory is created with the next available number
     DEBUG = False
 
     exps = [(lr, batch_size)

@@ -71,7 +71,7 @@ class TabularDataset(Dataset):
         np.ndarray the tabular data of an index
         """
 
-        p, lbl, c, cc = self.metadata_df[self.metadata_df['CumCount'] > index].iloc[0]
+        p, lbl, mode, filter_set, c, cc = self.metadata_df[self.metadata_df['CumCount'] > index].iloc[0]
         idx = index - (cc - c)
 
         found = False
@@ -90,6 +90,7 @@ class TabularDataset(Dataset):
             # new_df.dropna(inplace=True)
             new_df.fillna(new_df[self.input_fields+self.target_fields].mean(), inplace=True)
             new_df = new_df.query(f'{self.metadata_df.columns[1]} == "{lbl}"')
+            new_df = new_df[new_df[self.metadata_df.columns[3]].isin(filter_set)]
             # TODO: Remove unnecessary fields ?
             if self.shuffle:
                 new_df = new_df.sample(frac=1)

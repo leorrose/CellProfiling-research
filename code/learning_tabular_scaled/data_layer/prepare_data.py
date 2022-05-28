@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
+from data_layer.create_tabular_metadata import create_tabular_metadata
 from data_layer.tabular_dataset_with_ram import TabularDataset
 
 use_cuda = torch.cuda.is_available()
@@ -38,10 +39,10 @@ def load_data(args):
         mt_df = create_tabular_metadata(args.plates_path, all_plates, args.label_field)
     else:
         mt_df = pd.read_csv(args.metadata_path, dtype={'Plate': int, 'Count': int})
-        # mt_df['Indexes'] = mt_df['Indexes'].apply(lambda x: json.loads(x))
+        mt_df[args.split_field] = mt_df[args.split_field].apply(eval)
         plates = [p for p in all_plates if p not in mt_df['Plate'].unique()]
         if plates:
-            add_df = create_tabular_metadata(args.plates_path, plates, args.label_field)
+            add_df = create_tabular_metadata(args.plates_path, plates, args.label_field, args.train_labels, args.split_field, args.sample_n)
             mt_df = pd.concat([mt_df, add_df], ignore_index=True)
             mt_df.to_csv(args.metadata_path, index=False)
 
@@ -58,19 +59,6 @@ def load_data(args):
     return data_loaders
 
 
-def create_tabular_metadata(plates_path, plates, label_field):
-    mt_dict = {'Plate': [], label_field: [], 'Count': []}
-    for plate in plates:
-        plate_path = os.path.join(plates_path, f'{plate}.csv')
-        df = pd.read_csv(plate_path)
-        for (p, wr), c in df.groupby(['Plate', label_field]).count().iloc[:, 0].iteritems():
-            mt_dict['Plate'].append(p)
-            mt_dict[label_field].append(wr)
-            # mt_dict['Indexes'].append(list(df[df[label_field] == wr].index))
-            mt_dict['Count'].append(c)
-    return pd.DataFrame(mt_dict)
-
-
 def split_by_plates(df, args) -> dict:
     train_plates, test_plates = args.plates_split
     train_plates, val_plates = train_test_split(train_plates, train_size=args.split_ratio, shuffle=True) #TODO: SEED
@@ -80,8 +68,8 @@ def split_by_plates(df, args) -> dict:
     logging.info(f'Test Plates: {" ".join(str(t) for t in test_plates)}' if test_plates else 'There are no test plates')
 
     partitions = {
-        'train': list(df[(df['Plate'].isin(train_plates)) & (df[args.label_field].isin(args.train_labels))].index),
-        'val': list(df[(df['Plate'].isin(val_plates)) & (df[args.label_field].isin(args.train_labels))].index),
+        'train': list(df[(df['Plate'].isin(train_plates)) & (df[args.label_field].isin(args.train_labels)) & (df['Mode'] == 'train')].index),
+        'val': list(df[(df['Plate'].isin(val_plates)) & (df[args.label_field].isin(args.train_labels)) & (df['Mode'] == 'train')].index),
         'test': {}
     }
 
@@ -93,7 +81,7 @@ def split_by_plates(df, args) -> dict:
         partitions['test'][str(plate)] = {}
         for lbl in args.labels:
             partitions['test'][str(plate)][lbl] = list(
-                df[(df['Plate'] == plate) & (df[args.label_field] == lbl)].index)[:args.test_samples_per_plate]
+                df[(df['Plate'] == plate) & (df[args.label_field] == lbl) & (df['Mode'] == 'predict')].index)[:args.test_samples_per_plate]
 
     return partitions
 
@@ -108,7 +96,9 @@ def partitions_idx_to_dfs(mt_df, partitions):
     for plate in list(partitions['test'].keys()):
         df_partitions['test'][plate] = {}
         for key in partitions['test'][plate].keys():
-            df_partitions['test'][plate][key] = mt_df.iloc[partitions['test'][plate][key]].copy()
+            test_idxs = partitions['test'][plate][key]
+            if test_idxs:
+                df_partitions['test'][plate][key] = mt_df.iloc[test_idxs].copy()
 
     return df_partitions
 
