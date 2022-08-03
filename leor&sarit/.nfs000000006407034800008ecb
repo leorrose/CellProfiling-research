@@ -1,0 +1,10 @@
+Thu Aug 4 01:51:16 IDT 2022
+
+SLURM_JOBID:		 4175362
+SLURM_JOB_NODELIST:	 cs-cpu-22 
+
+
+Traceback (most recent call last):
+  File "/sise/assafzar-group/assafzar/s-and-l/CellProfiling-research/leor&sarit/batch_one_metadata_downloader.py", line 7, in <module>
+    import requests
+ModuleNotFoundError: No module named 'requests'
