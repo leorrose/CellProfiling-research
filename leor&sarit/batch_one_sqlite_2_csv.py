@@ -7,18 +7,22 @@ import os
 import pandas as pd
 import sqlite3
 from typing import Dict
+import multiprocessing as mp
 from multiprocessing import Pool
 from pathlib import Path
 
+# Define project path
+PROJ_PATH = "/sise/assafzar-group/assafzar/s-and-l"
+
 # Define metadata path
 METADATA_PATH = (
-    "/sise/assafzar-group/assafzar/s-and-l/CellProfiling-research/"
+    f"{PROJ_PATH}/CellProfiling-research/"
     "leor&sarit/data/metadata.csv"
 )
 
 # Define path to batch one data
 BATCH_1_DATA_PATH = (
-    "/sise/assafzar-group/assafzar/s-and-l/CellProfiling-research/leor&sarit/"
+    f"{PROJ_PATH}/CellProfiling-research/leor&sarit/"
     "data/batch_one"
 )
 
@@ -26,7 +30,7 @@ BATCH_1_DATA_PATH = (
 BATCH_1_SQLITE_PATH = f"{BATCH_1_DATA_PATH}/sqlite"
 
 # Define chunk size to read csv
-CHUNK_SIZE = 100000
+CHUNK_SIZE = 300000
 
 
 def sqlite_2_csv(
@@ -45,6 +49,12 @@ def sqlite_2_csv(
         to add metadata to csv.
 
   """
+  print(
+      (
+          f"Process {mp.current_process().name} started working on sqlite "
+          f"{metadata_plate}"
+      ), flush=True
+  )
   # Open connection
   with sqlite3.connect(connection_string, uri=True) as conn:
     # Define csv path
@@ -70,7 +80,7 @@ def sqlite_2_csv(
       db_df["Metadata_ASSAY_WELL_ROLE"] = db_df["Metadata_broad_sample"].isna(
       ).map({
           True: "treated",
-          False: "not-treated"
+          False: "mock"
       })
 
       # Rename TableNumber to Plate
@@ -84,6 +94,13 @@ def sqlite_2_csv(
       # Else it exists so append without writing the header
       else:
         db_df.to_csv(csv_path, index=False, mode="a", header=False)
+
+    print(
+        (
+            f"Process {mp.current_process().name} ended working on sqlite "
+            f"{metadata_plate}"
+        ), flush=True
+    )
 
 
 def map_data():
@@ -129,7 +146,7 @@ def map_data():
       print(f"{metadata_plate}: No sql folder!")
 
   # Run multiprocessing to map sqlite to csv
-  with Pool() as p:
+  with Pool(processes=4) as p:
     p.starmap_async(sqlite_2_csv, combinations)
     p.close()
     p.join()
