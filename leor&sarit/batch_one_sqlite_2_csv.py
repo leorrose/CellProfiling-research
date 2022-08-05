@@ -14,17 +14,14 @@ from pathlib import Path
 # Define project path
 PROJ_PATH = "/sise/assafzar-group/assafzar/s-and-l"
 
-# Define metadata path
-METADATA_PATH = (
-    f"{PROJ_PATH}/CellProfiling-research/"
-    "leor&sarit/data/metadata.csv"
-)
-
 # Define path to batch one data
 BATCH_1_DATA_PATH = (
     f"{PROJ_PATH}/CellProfiling-research/leor&sarit/"
     "data/batch_one"
 )
+
+# Define metadata path
+METADATA_PATH = (f"{BATCH_1_DATA_PATH}/metadata.csv")
 
 # Define path to sqlite files
 BATCH_1_SQLITE_PATH = f"{BATCH_1_DATA_PATH}/sqlite"
@@ -58,10 +55,7 @@ def sqlite_2_csv(
   # Open connection
   with sqlite3.connect(connection_string, uri=True) as conn:
     # Define csv path
-    csv_path = (
-        f"{BATCH_1_DATA_PATH}/csv/{metadata_plate}/"
-        f"{metadata_plate}.csv"
-    )
+    csv_path = f"{BATCH_1_DATA_PATH}/csv/{metadata_plate}.csv"
 
     # Create dirs if dont exist
     Path(os.path.dirname(csv_path)).mkdir(parents=True, exist_ok=True)
