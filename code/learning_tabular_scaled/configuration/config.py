@@ -10,8 +10,6 @@ import torch
 from argparse import ArgumentParser
 from pathlib import Path
 
-PATH = "D:/DSCI project"
-
 def parse_args(channel_idx=0, exp_num=None):
   parser = ArgumentParser()
 
@@ -43,7 +41,7 @@ def parse_args(channel_idx=0, exp_num=None):
   )
   parser.add_argument(
       '--cols_file', type=Path, default=
-      f'{PATH}/CellProfiling-research/leor&sarit/data/batch_one/columns.json',
+      '/sise/assafzar-group/assafzar/s-and-l/CellProfiling-research/leor&sarit/data/batch_one/columns.json',
       help=
       'json file containing a dictionary maps the different fields into channels'
   )
@@ -54,12 +52,12 @@ def parse_args(channel_idx=0, exp_num=None):
       ], help='index fields of the samples in the dataset'
   )
   parser.add_argument(
-      '--metadata_path', type=Path, default=f"{PATH}/CellProfiling-research/leor&sarit/data/batch_one/tabular_metadata.csv",
+      '--metadata_path', type=Path, default="/sise/assafzar-group/assafzar/s-and-l/CellProfiling-research/leor&sarit/data/batch_one/tabular_metadata.csv",
       help='where to save/load from the metadata file'
   )
   parser.add_argument(
       '--plates_path', type=Path,
-      default=f'{PATH}/CellProfiling-research/leor&sarit/data/batch_one/csv/temp/',
+      default='/sise/assafzar-group/assafzar/s-and-l/CellProfiling-research/leor&sarit/data/batch_one/csv/temp/',
       help="the folder that contains all the plates' csvs"
   )
 
@@ -103,7 +101,7 @@ def parse_args(channel_idx=0, exp_num=None):
   )
   parser.add_argument(
       '--output_root_path', type=Path, default=
-      f'{PATH}/CellProfiling-research/leor&sarit/tabular_models_results/',
+      '/sise/assafzar-group/assafzar/s-and-l/CellProfiling-research/leor&sarit/tabular_models_results/',
       help="where to save the experiment"
   )
 
@@ -136,7 +134,7 @@ def parse_args(channel_idx=0, exp_num=None):
   args.target_fields = sum(
       [args.cols_dict[k] for k in args.target_channels], []
   )
-  n_pth = fr"{PATH}/CellProfiling-research/leor&sarit/data/batch_one/{'_'.join(args.input_channels)}-{'_'.join(args.target_channels)}.normsav"
+  n_pth = fr"/sise/assafzar-group/assafzar/s-and-l/CellProfiling-research/leor&sarit/tabular_models_results/plates{'_'.join(args.input_channels)}-{'_'.join(args.target_channels)}.normsav"
   args.norm_params_path = n_pth
 
   args.exp_dir = os.path.join(
