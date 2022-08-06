@@ -24,5 +24,5 @@ echo -e "SLURM_JOB_NODELIST:\t" $SLURM_JOB_NODELIST "\n\n"
 
 ### Start your code below ####
 module load anaconda    ### load anaconda module (must be present when working with conda environments)
-source activate lincs_dsci    ### activate a conda environment, replace my_env with your conda environment
-python batch_one_sqlite_2_csv.py    ### execute python script – replace with your own command 
+source activate pt-env    ### activate a conda environment, replace my_env with your conda environment
+python /sise/assafzar-group/assafzar/s-and-l/CellProfiling-research/leor\&sarit/batch_one_sqlite_2_csv.py    ### execute python script – replace with your own command 

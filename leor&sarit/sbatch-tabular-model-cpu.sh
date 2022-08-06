@@ -27,4 +27,4 @@ echo -e "SLURM_JOB_NODELIST:\t" $SLURM_JOB_NODELIST "\n\n"
 ### Start you code below ####
 module load anaconda				### load anaconda module (must present when working with conda environments)
 source activate pt-env				### activating environment, environment must be configured before running the job
-python $CELL_HOME/code/learning_tabular_scaled/main.py $SLURM_ARRAY_TASK_ID		### replace with your own command
+python sise/assafzar-group/assafzar/s-and-l/CellProfiling-research/code/learning_tabular_scaled/main.py $SLURM_ARRAY_TASK_ID		### replace with your own command

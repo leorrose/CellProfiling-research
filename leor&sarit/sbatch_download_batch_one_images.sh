@@ -25,5 +25,5 @@ echo -e "SLURM_JOB_NODELIST:\t" $SLURM_JOB_NODELIST "\n\n"
 ### Start your code below ####
 module load anaconda    ### load anaconda module (must be present when working with conda environments)
 source activate lincs_dsci    ### activate a conda environment, replace my_env with your conda environment
-aws s3 cp --no-sign-request --recursive --include "*.tiff" --exclude "*.xml" s3://cellpainting-gallery/cpg0004-lincs/broad/images/2016_04_01_a549_48hr_batch1/images/ ./data/batch_one/images/    ### execute python script – replace with your own command 
+aws s3 cp --no-sign-request --recursive --include "*.tiff" --exclude "*.xml" s3://cellpainting-gallery/cpg0004-lincs/broad/images/2016_04_01_a549_48hr_batch1/images/ /sise/assafzar-group/assafzar/s-and-l/CellProfiling-research/leor\&sarit/data/batch_one/images/    ### execute python script – replace with your own command 
 

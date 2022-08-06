@@ -24,6 +24,6 @@ echo -e "SLURM_JOB_NODELIST:\t" $SLURM_JOB_NODELIST "\n\n"
 
 ### Start your code below ####
 module load anaconda    ### load anaconda module (must be present when working with conda environments)
-source activate lincs_dsci    ### activate a conda environment, replace my_env with your conda environment
-aws s3 cp --no-sign-request --recursive --include "*.sqlite" --exclude "*.csv" s3://cellpainting-gallery/cpg0004-lincs/broad/workspace/backend/2016_04_01_a549_48hr_batch1/ ./data/batch_one/sqlite    ### execute python script – replace with your own command 
+source activate pt-env    ### activate a conda environment, replace my_env with your conda environment
+aws s3 cp --no-sign-request --recursive --include "*.sqlite" --exclude "*.csv" s3://cellpainting-gallery/cpg0004-lincs/broad/workspace/backend/2016_04_01_a549_48hr_batch1/ /sise/assafzar-group/assafzar/s-and-l/CellProfiling-research/leor\&sarit/data/batch_one/sqlite    ### execute python script – replace with your own command 
 
