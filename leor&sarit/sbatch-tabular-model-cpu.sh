@@ -13,7 +13,7 @@
 #SBATCH --cpus-per-task=6
 
 # Note: the following 4 lines are commented out
-##SBATCH --mail-user=user@post.bgu.ac.il    ### user's email for sending job status messages
+##SBATCH --mail-user=leorro@post.bgu.ac.il    ### user's email for sending job status messages
 ##SBATCH --mail-type=ALL    ### conditions for sending the email. ALL,BEGIN,END,FAIL, REQUEU, NONE
 #SBATCH --mem=32G    ### ammount of RAM memory
 

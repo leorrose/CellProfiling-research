@@ -10,7 +10,7 @@
 #SBATCH --job-name CP-RT	### name of the job
 #SBATCH --output=%a_your_output.out			### output log for running job - %J for job number
 #SBATCH --mail-user=leorro@post.bgu.ac.il	### user email for sending job status
-#SBATCH --mail-type=ARRAY_TASKS,FAIL			### conditions when to send the email. ALL,BEGIN,END,FAIL, REQUEU, NONE
+#SBATCH --mail-type=ALL			### conditions when to send the email. ALL,BEGIN,END,FAIL, REQUEU, NONE
 
 #SBATCH --gpus=1				### number of GPUs, ask for more than 1 only if you can parallelize your code for multi GPU
 ##SBATCH --mem=32G				### amount of RAM memory
