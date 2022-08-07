@@ -8,7 +8,7 @@
 #SBATCH --partition rtx2080			### specify partition name where to run a job. debug: 2 hours limit; short: 7 days limit; gtx1080: 7 days
 #SBATCH --time 7-00:00:00			### limit the time of job running, partition limit can override this. Format: D-H:MM:SS
 #SBATCH --job-name CP-RT	### name of the job
-#SBATCH --output job_outputs/tabular_model/%a-all-with-well-split.out			### output log for running job - %J for job number
+#SBATCH --output=%a_your_output.out			### output log for running job - %J for job number
 #SBATCH --mail-user=leorro@post.bgu.ac.il	### user email for sending job status
 #SBATCH --mail-type=ARRAY_TASKS,FAIL			### conditions when to send the email. ALL,BEGIN,END,FAIL, REQUEU, NONE
 
