@@ -211,7 +211,7 @@ def create_data_loaders(datasets, partitions, batch_size, num_workers=32) -> dic
     # s=time()
     # batch = next(iter(data_loaders['train']))
     # print(f'Took {time()-s} seconds')
-    exit(42)
+    # exit(42)
 
 
     for plate in list(partitions['test'].keys()):
