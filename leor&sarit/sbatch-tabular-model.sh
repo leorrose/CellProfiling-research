@@ -13,7 +13,7 @@
 #SBATCH --mail-type=ALL			### conditions when to send the email. ALL,BEGIN,END,FAIL, REQUEU, NONE
 
 #SBATCH --gpus=1				### number of GPUs, ask for more than 1 only if you can parallelize your code for multi GPU
-##SBATCH --mem=32G				### amount of RAM memory
+#SBATCH --mem=64G				### amount of RAM memory
 #SBATCH --cpus-per-task=6			### number of CPU cores
 
 ##SBATCH --array=100-106,110-116,120-126,130-136,140-146,200-206,210-216,220-226,230-236,240-246
