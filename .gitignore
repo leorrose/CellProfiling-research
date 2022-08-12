@@ -143,6 +143,7 @@ dmypy.json
 /results/
 
 #
-**/data/*
+**/data/batch_one/sqlite
+**/data/batch_one/csv
 .pylintrc
 .vscode
