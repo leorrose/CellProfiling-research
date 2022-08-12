@@ -34,12 +34,13 @@ def load_data(args):
     :return:
     """
 
+    # all_plates = sum(args.plates_split, [])
     all_plates = args.plates_split[0]
-    if args.metadata_path is None:
+    if not os.path.isfile(args.metadata_path):
         mt_df = create_tabular_metadata(args.plates_path, all_plates , args.label_field, args.train_labels, args.split_field, args.sample_n)
         mt_df.to_csv(args.metadata_path, index=False)
     else:
-        mt_df = pd.read_csv(args.metadata_path, dtype={'Plate': int, 'Count': int})
+        mt_df = pd.read_csv(args.metadata_path, dtype={'Plate': str, 'Count': int})
         mt_df[args.split_field] = mt_df[args.split_field].apply(eval)
         plates = [p for p in all_plates if p not in mt_df['Plate'].unique()]
         if plates:
