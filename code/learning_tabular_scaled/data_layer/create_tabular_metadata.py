@@ -40,3 +40,18 @@ def add_metadata(mt_dict, label_field, by_fld, plate, lbl, mode, train_set, trai
     mt_dict['Mode'].append(mode)
     mt_dict[by_fld].append(train_set)
     mt_dict['Count'].append(train_count)
+
+
+if __name__ == '__main__':
+    plates_fld = '/storage/users/g-and-n/plates/csvs/'
+    output_fld = '/storage/users/g-and-n/plates/tabular_metadata/'
+    by_fld = 'Image_Metadata_Well'
+    sample_n = 16
+    label_field = 'Metadata_ASSAY_WELL_ROLE'
+    train_labels = ['mock']
+
+    i = int(sys.argv[1])
+    plates = [p.split('.')[0] for p in os.listdir(plates_fld)][i * 6:i * 6 + 6]
+
+    mt_df = create_tabular_metadata(plates_fld, plates, label_field, train_labels, by_fld, sample_n)
+    mt_df.to_csv(os.path.join(output_fld, f'{i}.csv'), index=False)
